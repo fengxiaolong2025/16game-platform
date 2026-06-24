@@ -76,7 +76,6 @@ export class TournamentService {
   async update(id: string, userId: string, data: Partial<Tournament>): Promise<Tournament> {
     const tournament = await this.findById(id);
     if (tournament.creator_id !== userId) throw new ForbiddenException('无权修改此赛事');
-    if (tournament.status === 'completed') throw new ForbiddenException('已结束的赛事不可修改');
 
     Object.assign(tournament, data);
     return this.tournamentRepo.save(tournament);
@@ -98,9 +97,7 @@ export class TournamentService {
   async delete(id: string, userId: string): Promise<void> {
     const tournament = await this.findById(id);
     if (tournament.creator_id !== userId) throw new ForbiddenException('无权删除');
-    if (!['draft', 'registration'].includes(tournament.status)) {
-      throw new ForbiddenException('仅草稿和报名中的赛事可删除');
-    }
+    // 允许删除任何状态的赛事（completed 也可以删）
     await this.tournamentRepo.remove(tournament);
   }
 
@@ -108,15 +105,10 @@ export class TournamentService {
     const tournament = await this.findById(id);
     if (tournament.creator_id !== userId) throw new ForbiddenException('无权操作');
 
-    const validTransitions: Record<string, string[]> = {
-      'draft': ['registration'],
-      'registration': ['bracket'],
-      'bracket': ['in_progress'],
-      'in_progress': ['completed'],
-    };
-
-    if (!validTransitions[tournament.status]?.includes(newStatus)) {
-      throw new ForbiddenException(`无法从 ${tournament.status} 变更为 ${newStatus}`);
+    // 允许所有状态互相切换（包括回退）
+    const validStatuses = ['draft', 'registration', 'bracket', 'in_progress', 'completed'];
+    if (!validStatuses.includes(newStatus)) {
+      throw new ForbiddenException(`无效的状态: ${newStatus}`);
     }
 
     tournament.status = newStatus;

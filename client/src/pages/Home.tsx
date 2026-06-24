@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Row, Col, Tag, Typography, Input, Select, Space, Empty, Spin } from 'antd';
-import { SearchOutlined, TrophyOutlined, UserOutlined, CalendarOutlined } from '@ant-design/icons';
+import { Card, Row, Col, Tag, Typography, Input, Select, Space, Empty, Spin, Button, Modal, Form, message, Popconfirm } from 'antd';
+import { SearchOutlined, TrophyOutlined, UserOutlined, CalendarOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { tournamentApi } from '../api';
+import { useAuthStore } from '../store';
 
 const { Title, Text } = Typography;
 
@@ -26,7 +27,10 @@ export function HomePage() {
   const [tournaments, setTournaments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState({ game: '', status: '' });
+  const [editModal, setEditModal] = useState<{ open: boolean; tournament: any }>({ open: false, tournament: null });
+  const [editForm] = Form.useForm();
   const navigate = useNavigate();
+  const user = useAuthStore((s) => s.user);
 
   useEffect(() => {
     loadTournaments();
@@ -43,6 +47,36 @@ export function HomePage() {
 
   const handleSearch = (value: string) => {
     loadTournaments({ game: filter.game, status: filter.status, search: value });
+  };
+
+  const handleEdit = (t: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    editForm.setFieldsValue({ title: t.title, organizer_name: t.organizer_name, rules: t.rules });
+    setEditModal({ open: true, tournament: t });
+  };
+
+  const handleEditSave = async () => {
+    try {
+      const values = await editForm.validateFields();
+      await tournamentApi.update(editModal.tournament.id, values);
+      message.success('赛事已更新');
+      setEditModal({ open: false, tournament: null });
+      loadTournaments();
+    } catch (err: any) {
+      if (err?.errorFields) return;
+      message.error(err.response?.data?.message || '更新失败');
+    }
+  };
+
+  const handleDelete = async (t: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await tournamentApi.delete(t.id);
+      message.success('赛事已删除');
+      loadTournaments();
+    } catch (err: any) {
+      message.error(err.response?.data?.message || '删除失败');
+    }
   };
 
   return (
@@ -95,13 +129,21 @@ export function HomePage() {
               <Card
                 hoverable
                 onClick={() => navigate(`/t/${t.id}`)}
-                style={{ borderRadius: 12, overflow: 'hidden', height: '100%' }}
+                style={{ borderRadius: 12, overflow: 'hidden', height: '100%', position: 'relative' }}
                 cover={
                   <div style={{ height: 120, background: `linear-gradient(135deg, ${gameColors[t.game] || '#1677ff'}22, ${gameColors[t.game] || '#1677ff'}44)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <TrophyOutlined style={{ fontSize: 40, color: gameColors[t.game] || '#1677ff' }} />
                   </div>
                 }
               >
+                {user?.id === t.creator_id && (
+                  <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 10, display: 'flex', gap: 4 }}>
+                    <Button size="small" type="primary" ghost icon={<EditOutlined />} onClick={(e) => handleEdit(t, e)} />
+                    <Popconfirm title="确定删除此赛事？" onConfirm={(e) => handleDelete(t, e as any)} onCancel={(e) => e?.stopPropagation()}>
+                      <Button size="small" danger ghost icon={<DeleteOutlined />} onClick={(e) => e.stopPropagation()} />
+                    </Popconfirm>
+                  </div>
+                )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                   <Text strong style={{ fontSize: 16 }}>{t.title}</Text>
                   <Tag color={statusMap[t.status]?.color}>{statusMap[t.status]?.label || t.status}</Tag>
@@ -116,6 +158,20 @@ export function HomePage() {
           ))}
         </Row>
       )}
+
+      <Modal title="编辑赛事" open={editModal.open} onOk={handleEditSave} onCancel={() => setEditModal({ open: false, tournament: null })} okText="保存" cancelText="取消">
+        <Form form={editForm} layout="vertical">
+          <Form.Item name="title" label="赛事名称" rules={[{ required: true, message: '请输入赛事名称' }]}>
+            <Input maxLength={50} />
+          </Form.Item>
+          <Form.Item name="organizer_name" label="主办方名称">
+            <Input />
+          </Form.Item>
+          <Form.Item name="rules" label="赛事规则">
+            <Input.TextArea rows={4} />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }

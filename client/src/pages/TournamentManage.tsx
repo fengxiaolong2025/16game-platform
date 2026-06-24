@@ -160,11 +160,15 @@ export function TournamentManagePage() {
       <Card style={{ borderRadius: 12, marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
           <h2 style={{ margin: 0 }}>管理：{tournament.title}</h2>
-          <Space>
+          <Space wrap>
             {tournament.status === 'draft' && <Button type="primary" onClick={() => handleAdvanceStatus('registration')}>开始报名</Button>}
             {tournament.status === 'registration' && <Button type="primary" onClick={() => handleAdvanceStatus('bracket')}>截止报名 & 编排对阵</Button>}
             {tournament.status === 'bracket' && <Button type="primary" onClick={() => handleAdvanceStatus('in_progress')}>开始比赛</Button>}
             {tournament.status === 'in_progress' && <Button type="primary" onClick={() => handleAdvanceStatus('completed')}>结束赛事</Button>}
+            {/* 回退按钮 */}
+            {tournament.status === 'bracket' && <Button onClick={() => handleAdvanceStatus('registration')}>← 退回报名阶段</Button>}
+            {tournament.status === 'in_progress' && <Button onClick={() => handleAdvanceStatus('bracket')}>← 退回对阵阶段</Button>}
+            {tournament.status === 'completed' && <Button onClick={() => handleAdvanceStatus('in_progress')}>← 重新开始比赛</Button>}
           </Space>
         </div>
       </Card>
