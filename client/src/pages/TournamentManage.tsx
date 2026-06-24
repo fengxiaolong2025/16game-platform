@@ -235,30 +235,82 @@ export function TournamentManagePage() {
                 {!bracket ? (
                   <div style={{ textAlign: 'center', padding: 40 }}>
                     <p>尚未生成对阵表</p>
-                    <Button type="primary" size="large" onClick={handleGenerateBracket} disabled={tournament.status !== 'bracket'}>自动生成对阵表</Button>
+                    <Button type="primary" size="large" onClick={handleGenerateBracket} disabled={tournament.status !== 'bracket' && tournament.status !== 'in_progress'}>自动生成对阵表</Button>
                   </div>
                 ) : (
                   <div>
-                    <div style={{ marginBottom: 16 }}>
+                    <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
                       <Tag color={bracket.status === 'published' ? 'green' : 'blue'}>{bracket.status === 'published' ? '已发布' : '草稿'}</Tag>
-                      {bracket.status !== 'published' && <Button type="primary" onClick={handlePublishBracket} style={{ marginLeft: 8 }}>发布对阵</Button>}
+                      {bracket.status !== 'published' && <Button type="primary" onClick={handlePublishBracket}>发布对阵</Button>}
+                      <Popconfirm title="重新生成将覆盖当前对阵和比赛结果，确定？" onConfirm={handleGenerateBracket}>
+                        <Button>重新生成对阵</Button>
+                      </Popconfirm>
                     </div>
-                    {bracket.rounds_data?.map((round: any, ri: number) => (
-                      <div key={ri} style={{ marginBottom: 16 }}>
-                        <h4>{round.name}</h4>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                          {round.matches?.map((m: any) => (
-                            <Card key={m.id} size="small" style={{ minWidth: 200 }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span>{m.participant_a?.name || '待定'}</span>
-                                <span>VS</span>
-                                <span>{m.participant_b?.name || '待定'}</span>
+                    {/* 横向树状对阵图 */}
+                    <div style={{ overflowX: 'auto', padding: '20px 0' }}>
+                      <div style={{ display: 'flex', gap: 48, alignItems: 'flex-start', minWidth: 'max-content' }}>
+                        {bracket.rounds_data?.map((round: any, ri: number) => {
+                          const matchCount = round.matches?.length || 0;
+                          const isLast = ri === (bracket.rounds_data?.length || 0) - 1;
+                          return (
+                            <div key={ri} style={{ display: 'flex', flexDirection: 'column', minWidth: 200 }}>
+                              <div style={{ textAlign: 'center', fontWeight: 700, marginBottom: 16, fontSize: 15, color: isLast ? '#fa541c' : '#1677ff' }}>
+                                {round.name}
                               </div>
-                            </Card>
-                          ))}
-                        </div>
+                              <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'space-around',
+                                gap: 12,
+                                minHeight: matchCount > 1 ? (matchCount - 1) * 100 + 80 : 80,
+                              }}>
+                                {round.matches?.map((m: any) => {
+                                  const aWin = m.winner_id && m.participant_a?.id === m.winner_id;
+                                  const bWin = m.winner_id && m.participant_b?.id === m.winner_id;
+                                  const aBye = m.participant_a?.is_bye;
+                                  const bBye = m.participant_b?.is_bye;
+                                  return (
+                                    <div key={m.id} style={{
+                                      border: '1px solid #d9d9d9',
+                                      borderRadius: 8,
+                                      overflow: 'hidden',
+                                      minWidth: 180,
+                                      boxShadow: '0 2px 4px rgba(0,0,0,0.06)',
+                                    }}>
+                                      <div style={{
+                                        padding: '8px 12px',
+                                        background: aWin ? '#f6ffed' : '#fafafa',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        borderBottom: '1px solid #f0f0f0',
+                                      }}>
+                                        <span style={{ fontWeight: aWin ? 700 : 400, color: aWin ? '#52c41a' : '#333', fontSize: 13 }}>
+                                          {aBye ? 'BYE' : (m.participant_a?.name || '待定')}
+                                        </span>
+                                        {aWin && <span>🏆</span>}
+                                      </div>
+                                      <div style={{
+                                        padding: '8px 12px',
+                                        background: bWin ? '#f6ffed' : '#fff',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                      }}>
+                                        <span style={{ fontWeight: bWin ? 700 : 400, color: bWin ? '#52c41a' : '#333', fontSize: 13 }}>
+                                          {bBye ? 'BYE' : (m.participant_b?.name || '待定')}
+                                        </span>
+                                        {bWin && <span>🏆</span>}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                    ))}
+                    </div>
                   </div>
                 )}
               </div>
