@@ -24,6 +24,12 @@ export class RegistrationController {
     return this.registrationService.getMyRegistration(tournamentId, req.user.id);
   }
 
+  @Get('team-registrations')
+  @UseGuards(JwtAuthGuard)
+  async teamRegistrations(@Param('tournamentId') tournamentId: string, @Request() req) {
+    return this.registrationService.getTeamRegistrations(tournamentId, req.user.id);
+  }
+
   @Post(':id/review')
   @UseGuards(JwtAuthGuard)
   async review(@Param('tournamentId') tournamentId: string, @Param('id') id: string, @Request() req, @Body() body: { action: 'approve' | 'reject'; comment?: string }) {

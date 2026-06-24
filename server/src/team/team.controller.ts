@@ -17,6 +17,11 @@ export class TeamController {
     return this.teamService.findByUser(req.user.id);
   }
 
+  @Get('captain/my')
+  async myCaptainTeams(@Request() req) {
+    return this.teamService.findByCaptain(req.user.id);
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return this.teamService.findById(id);

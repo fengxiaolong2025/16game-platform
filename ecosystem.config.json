@@ -1,0 +1,23 @@
+{
+  "apps": [
+    {
+      "name": "esports-backend",
+      "cwd": "/workspace/esports-platform/server",
+      "script": "dist/main.js",
+      "env": {
+        "NODE_ENV": "production",
+        "PORT": "3001",
+        "JWT_SECRET": "16game-platform-jwt-secret-prod-2026"
+      }
+    },
+    {
+      "name": "esports-frontend",
+      "cwd": "/workspace/esports-platform",
+      "script": "server.js",
+      "env": {
+        "NODE_ENV": "production",
+        "PORT": "8000"
+      }
+    }
+  ]
+}

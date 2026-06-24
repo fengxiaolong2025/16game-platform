@@ -17,22 +17,33 @@ export function TournamentManagePage() {
   const [scoreB, setScoreB] = useState(0);
   const [scheduleModal, setScheduleModal] = useState<{ open: boolean; match: any }>({ open: false, match: null });
   const [scheduleTime, setScheduleTime] = useState<any>(null);
+  const [teamRegs, setTeamRegs] = useState<any[]>([]);
 
   useEffect(() => { loadData(); }, [id]);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const [tRes, rRes, bRes, mRes] = await Promise.all([
-        tournamentApi.get(id!),
+      const tRes = await tournamentApi.get(id!);
+      setTournament(tRes.data);
+
+      const isTeam = tRes.data.participant_type === 'team';
+      const fetches: Promise<any>[] = [
         registrationApi.list(id!).catch(() => ({ data: [] })),
         bracketApi.get(id!).catch(() => ({ data: null })),
         matchApi.list(id!).catch(() => ({ data: [] })),
-      ]);
-      setTournament(tRes.data);
-      setRegistrations(rRes.data);
-      setBracket(bRes.data);
-      setMatches(mRes.data);
+      ];
+      if (isTeam) {
+        fetches.push(registrationApi.teamRegistrations(id!).catch(() => ({ data: [] })));
+      }
+
+      const results = await Promise.all(fetches);
+      setRegistrations(results[0].data);
+      setBracket(results[1].data);
+      setMatches(results[2].data);
+      if (isTeam && results[3]) {
+        setTeamRegs(results[3].data);
+      }
     } catch { message.error('加载失败'); }
     finally { setLoading(false); }
   };
@@ -162,8 +173,55 @@ export function TournamentManagePage() {
         <Tabs items={[
           {
             key: 'registrations',
-            label: `报名管理 (${registrations.length})`,
-            children: <Table dataSource={registrations} columns={regColumns} rowKey="id" pagination={false} size="small" />,
+            label: `报名管理 (${tournament.participant_type === 'team' ? teamRegs.length + '支队伍' : registrations.length + '人'})`,
+            children: tournament.participant_type === 'team' ? (
+              <div>
+                <div style={{ marginBottom: 12, display: 'flex', gap: 16 }}>
+                  <Tag color="blue" style={{ fontSize: 14, padding: '4px 12px' }}>队伍：{teamRegs.length}</Tag>
+                  <Tag color="green" style={{ fontSize: 14, padding: '4px 12px' }}>总人数：{teamRegs.reduce((sum: number, t: any) => sum + (t.member_count || 0), 0)}</Tag>
+                  <Tag style={{ fontSize: 14, padding: '4px 12px' }}>名额：{tournament.max_participants}队</Tag>
+                </div>
+                <Table
+                  dataSource={teamRegs}
+                  rowKey="id"
+                  pagination={false}
+                  size="small"
+                  expandable={{
+                    expandedRowRender: (record: any) => (
+                      <Table
+                        dataSource={record.members || []}
+                        rowKey="user_id"
+                        pagination={false}
+                        size="small"
+                        columns={[
+                          { title: '角色', dataIndex: 'role', render: (r: string) => r === 'captain' ? <Tag color="gold">队长</Tag> : <Tag>队员</Tag>, width: 80 },
+                          { title: '昵称', dataIndex: 'nickname' },
+                          { title: '游戏ID', dataIndex: 'game_ids' },
+                        ]}
+                      />
+                    ),
+                  }}
+                  columns={[
+                    { title: '战队名称', dataIndex: 'team_name', render: (v: string, r: any) => <strong>{v}</strong> },
+                    { title: '标签', dataIndex: 'team_tag', render: (v: string) => v ? <Tag>{v}</Tag> : '-' },
+                    { title: '人数', dataIndex: 'member_count', render: (v: number) => <Tag color="blue">{v}人</Tag> },
+                    { title: '状态', dataIndex: 'status', render: (s: string) => {
+                      const m: Record<string, { color: string; label: string }> = { submitted: { color: 'blue', label: '待审核' }, approved: { color: 'green', label: '已通过' }, rejected: { color: 'red', label: '已拒绝' } };
+                      return <Tag color={m[s]?.color}>{m[s]?.label || s}</Tag>;
+                    }},
+                    { title: '报名时间', dataIndex: 'created_at', render: (v: string) => dayjs(v).format('MM-DD HH:mm') },
+                    { title: '操作', render: (_: any, r: any) => r.status === 'submitted' ? (
+                      <Space>
+                        <Button size="small" type="primary" icon={<CheckCircleOutlined />} onClick={() => handleReview(r.id, 'approve')}>通过</Button>
+                        <Button size="small" danger icon={<CloseCircleOutlined />} onClick={() => handleReview(r.id, 'reject')}>拒绝</Button>
+                      </Space>
+                    ) : null },
+                  ]}
+                />
+              </div>
+            ) : (
+              <Table dataSource={registrations} columns={regColumns} rowKey="id" pagination={false} size="small" />
+            ),
           },
           {
             key: 'bracket',

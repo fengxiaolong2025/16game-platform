@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Card, Tabs, Tag, Button, Space, Descriptions, message, Modal, Table, Spin, Empty, Form, Input } from 'antd';
+import { Card, Tabs, Tag, Button, Space, Descriptions, message, Modal, Table, Spin, Empty, Form, Input, Select } from 'antd';
 import { ShareAltOutlined, EditOutlined, UserAddOutlined } from '@ant-design/icons';
-import { tournamentApi, registrationApi, bracketApi, matchApi, rankingApi } from '../api';
+import { tournamentApi, registrationApi, bracketApi, matchApi, rankingApi, teamApi } from '../api';
 import { useAuthStore } from '../store';
 import dayjs from 'dayjs';
 
@@ -24,6 +24,7 @@ export function TournamentDetailPage() {
   const [myReg, setMyReg] = useState<any>(null);
   const [regModalOpen, setRegModalOpen] = useState(false);
   const [regForm] = Form.useForm();
+  const [myCaptainTeams, setMyCaptainTeams] = useState<any[]>([]);
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
   const navigate = useNavigate();
@@ -65,25 +66,37 @@ export function TournamentDetailPage() {
       if (formValues.game_id) customFields.game_id = formValues.game_id;
       if (formValues.note) customFields.note = formValues.note;
 
+      const isTeam = tournament?.participant_type === 'team';
       await registrationApi.register(id!, {
-        type: tournament?.participant_type || 'individual',
+        type: isTeam ? 'team' : 'individual',
+        team_id: isTeam ? formValues.team_id : undefined,
         custom_fields: customFields,
       });
-      message.success('报名已提交，等待主办方审核！');
+      message.success(isTeam ? '战队报名已提交，等待主办方审核！' : '报名已提交，等待主办方审核！');
       setRegModalOpen(false);
       loadData();
     } catch (err: any) {
-      if (err?.errorFields) return; // form validation, ignore
+      if (err?.errorFields) return;
       message.error(err.response?.data?.message || '报名失败');
     }
   };
 
-  const openRegModal = () => {
-    // Pre-fill from user profile
+  const openRegModal = async () => {
+    const isTeam = tournament?.participant_type === 'team';
+
+    if (isTeam) {
+      // Load captain's teams
+      try {
+        const res = await teamApi.myCaptainTeams();
+        setMyCaptainTeams(res.data || []);
+      } catch { /* ignore */ }
+    }
+
     regForm.setFieldsValue({
       player_name: user?.nickname || '',
       game_id: user?.game_ids || '',
       note: '',
+      team_id: undefined,
     });
     setRegModalOpen(true);
   };
@@ -193,13 +206,40 @@ export function TournamentDetailPage() {
         ]} />
       </Card>
 
-      <Modal title="报名参赛" open={regModalOpen} onOk={handleRegister} onCancel={() => setRegModalOpen(false)} okText="提交报名" cancelText="取消" width={480}>
+      <Modal title={tournament.participant_type === 'team' ? '战队报名' : '报名参赛'} open={regModalOpen} onOk={handleRegister} onCancel={() => setRegModalOpen(false)} okText="提交报名" cancelText="取消" width={520}>
         <div style={{ marginBottom: 16, padding: 12, background: '#f0f5ff', borderRadius: 8 }}>
           <strong>{tournament.title}</strong>
-          <p style={{ margin: '4px 0 0', color: '#666' }}>游戏：{tournament.game} | 赛制：{tournament.format === 'single_elimination' ? '单败淘汰' : tournament.format === 'double_elimination' ? '双败淘汰' : '循环赛'}</p>
+          <p style={{ margin: '4px 0 0', color: '#666' }}>
+            游戏：{tournament.game} | 赛制：{tournament.format === 'single_elimination' ? '单败淘汰' : tournament.format === 'double_elimination' ? '双败淘汰' : '循环赛'}
+            {tournament.participant_type === 'team' && tournament.team_size && ` | 每队${tournament.team_size}人`}
+          </p>
         </div>
         <Form form={regForm} layout="vertical">
-          <Form.Item name="player_name" label="选手昵称" rules={[{ required: true, message: '请输入你的参赛昵称' }]}>
+          {tournament.participant_type === 'team' && (
+            <>
+              <div style={{ padding: 8, background: '#fff7e6', borderRadius: 6, marginBottom: 12, fontSize: 13, color: '#fa8c16' }}>
+                ℹ️ 团队赛仅限队长报名。请先在"我的战队"中创建战队并邀请队员加入，队员人数需达到 {tournament.team_size || 1} 人。
+              </div>
+              <Form.Item name="team_id" label="选择你的战队" rules={[{ required: true, message: '请选择战队' }]}>
+                <Select
+                  placeholder="选择你要报名的战队"
+                  notFoundContent="你还没有战队，请先创建战队"
+                  options={myCaptainTeams.map((t: any) => ({
+                    label: `${t.name}${t.tag ? ` [${t.tag}]` : ''} (${t.member_count}人)`,
+                    value: t.id,
+                  }))}
+                />
+              </Form.Item>
+              {myCaptainTeams.length === 0 && (
+                <div style={{ marginBottom: 12 }}>
+                  <Button type="dashed" block onClick={() => { window.location.href = '/teams'; }}>
+                    去创建战队 →
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+          <Form.Item name="player_name" label={tournament.participant_type === 'team' ? '队长昵称' : '选手昵称'} rules={[{ required: true, message: '请输入昵称' }]}>
             <Input placeholder="你的参赛昵称" maxLength={30} />
           </Form.Item>
           <Form.Item name="game_id" label={`${tournament.game} 游戏ID`} rules={[{ required: true, message: '请输入你的游戏内ID' }]}>

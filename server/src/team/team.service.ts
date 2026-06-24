@@ -115,4 +115,19 @@ export class TeamService {
     Object.assign(team, data);
     return this.teamRepo.save(team);
   }
+
+  async findByCaptain(captainId: string): Promise<Team[]> {
+    return this.teamRepo.find({ where: { captain_id: captainId } });
+  }
+
+  async findByIdSilent(id: string): Promise<Team | null> {
+    return this.teamRepo.findOne({ where: { id } });
+  }
+
+  async getApprovedMembers(teamId: string): Promise<TeamMember[]> {
+    return this.memberRepo.find({
+      where: { team_id: teamId, status: 'approved' },
+      relations: { user: true },
+    });
+  }
 }

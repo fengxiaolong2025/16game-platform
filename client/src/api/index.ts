@@ -29,6 +29,7 @@ export const registrationApi = {
   batchReview: (tournamentId: string, ids: string[], action: string) =>
     api.post(`/tournaments/${tournamentId}/registrations/batch-review`, { ids, action }),
   checkin: (tournamentId: string) => api.post(`/tournaments/${tournamentId}/registrations/checkin`),
+  teamRegistrations: (tournamentId: string) => api.get(`/tournaments/${tournamentId}/registrations/team-registrations`),
 };
 
 export const bracketApi = {
@@ -64,6 +65,7 @@ export const teamApi = {
   reviewMember: (teamId: string, memberId: string, action: string) =>
     api.post(`/teams/${teamId}/members/${memberId}/review`, { action }),
   removeMember: (teamId: string, memberId: string) => api.delete(`/teams/${teamId}/members/${memberId}`),
+  myCaptainTeams: () => api.get('/teams/captain/my'),
 };
 
 export const notificationApi = {

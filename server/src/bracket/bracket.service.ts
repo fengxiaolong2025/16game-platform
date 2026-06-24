@@ -32,14 +32,17 @@ export class BracketService {
     });
 
     if (registrations.length < 2) {
-      throw new ForbiddenException('已通过报名不足 2 人，无法生成对阵');
+      throw new ForbiddenException('已通过报名不足 2 人/队，无法生成对阵');
     }
 
-    // Use custom_fields.player_name if available, otherwise fallback
+    // Build participants — use team name for team tournaments, player name for individual
+    const isTeam = tournament.participant_type === 'team';
     const participants = registrations.map((r, i) => ({
       id: r.id,
-      name: (r.custom_fields && r.custom_fields['player_name']) || `选手_${r.user_id.slice(0, 8)}`,
-      seed: i < 4 ? i + 1 : undefined, // first 4 get seeds
+      name: isTeam
+        ? (r.custom_fields?.team_name || `战队_${r.team_id?.slice(0, 8) || r.user_id.slice(0, 8)}`)
+        : (r.custom_fields?.player_name || `选手_${r.user_id.slice(0, 8)}`),
+      seed: i < 4 ? i + 1 : undefined,
     }));
 
     let roundsData;
