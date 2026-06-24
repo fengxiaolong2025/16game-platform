@@ -48,6 +48,10 @@ export const matchApi = {
     api.post(`/tournaments/${tournamentId}/matches/${id}/result`, result),
   schedule: (tournamentId: string, id: string, scheduled_at: string) =>
     api.put(`/tournaments/${tournamentId}/matches/${id}/schedule`, { scheduled_at }),
+  updateBestOf: (tournamentId: string, id: string, best_of: number) =>
+    api.put(`/tournaments/${tournamentId}/matches/${id}/best-of`, { best_of }),
+  updateRoundBestOf: (tournamentId: string, round: number, best_of: number) =>
+    api.put(`/tournaments/${tournamentId}/matches/round/${round}/best-of`, { best_of }),
 };
 
 export const rankingApi = {

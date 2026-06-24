@@ -28,4 +28,17 @@ export class MatchController {
   async schedule(@Param('tournamentId') tournamentId: string, @Param('id') id: string, @Request() req, @Body() body: { scheduled_at: string }) {
     return this.matchService.scheduleMatch(tournamentId, id, req.user.id, new Date(body.scheduled_at));
   }
+
+  @Put(':id/best-of')
+  @UseGuards(JwtAuthGuard)
+  async updateBestOf(@Param('tournamentId') tournamentId: string, @Param('id') id: string, @Request() req, @Body() body: { best_of: number }) {
+    return this.matchService.updateBestOf(tournamentId, id, req.user.id, body.best_of);
+  }
+
+  @Put('round/:round/best-of')
+  @UseGuards(JwtAuthGuard)
+  async updateRoundBestOf(@Param('tournamentId') tournamentId: string, @Param('round') round: string, @Request() req, @Body() body: { best_of: number }) {
+    await this.matchService.updateBestOfByRound(tournamentId, req.user.id, parseInt(round), body.best_of);
+    return { message: '赛制已更新' };
+  }
 }

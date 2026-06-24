@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Card, Tabs, Table, Button, Tag, Space, message, Modal, Popconfirm, Spin, Empty, DatePicker } from 'antd';
+import { Card, Tabs, Table, Button, Tag, Space, message, Modal, Popconfirm, Spin, Empty, DatePicker, Select } from 'antd';
 import { PlayCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined, EditOutlined } from '@ant-design/icons';
 import { tournamentApi, registrationApi, bracketApi, matchApi } from '../api';
 import dayjs from 'dayjs';
@@ -123,12 +123,33 @@ export function TournamentManagePage() {
     ) : null },
   ];
 
+  const handleBestOfChange = async (matchId: string, bestOf: number) => {
+    try {
+      await matchApi.updateBestOf(id!, matchId, bestOf);
+      loadData();
+    } catch (err: any) { message.error('设置失败'); }
+  };
+
   const matchColumns = [
     { title: '轮次', dataIndex: 'round', render: (r: number) => `第${r}轮`, width: 60 },
-    { title: '选手A', dataIndex: 'participant_a_name' },
+    { title: isTeam ? '战队A' : '选手A', dataIndex: 'participant_a_name' },
     { title: 'VS', render: () => <span style={{ color: '#999' }}>VS</span>, width: 40 },
-    { title: '选手B', dataIndex: 'participant_b_name' },
+    { title: isTeam ? '战队B' : '选手B', dataIndex: 'participant_b_name' },
     { title: '比分', render: (_: any, r: any) => r.status === 'completed' ? <Tag color="blue">{r.score_a}:{r.score_b}</Tag> : '-' },
+    { title: '赛制', dataIndex: 'best_of', width: 70, render: (v: number, r: any) => (
+      <Select
+        size="small"
+        value={v || 1}
+        onChange={(val) => handleBestOfChange(r.id, val)}
+        style={{ width: 65 }}
+        options={[
+          { label: 'BO1', value: 1 },
+          { label: 'BO3', value: 3 },
+          { label: 'BO5', value: 5 },
+          { label: 'BO7', value: 7 },
+        ]}
+      />
+    )},
     { title: '时间', dataIndex: 'scheduled_at', render: (v: string) => v ? dayjs(v).format('MM-DD HH:mm') : <span style={{ color: '#ccc' }}>未设置</span> },
     { title: '状态', dataIndex: 'status', render: (s: string) => s === 'completed' ? <Tag color="green">已结束</Tag> : s === 'live' ? <Tag color="orange">进行中</Tag> : <Tag>待开始</Tag> },
     { title: '操作', render: (_: any, r: any) => {

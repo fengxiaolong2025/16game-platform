@@ -32,9 +32,12 @@ export function HomePage() {
   const [editForm] = Form.useForm();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
+  const token = useAuthStore((s) => s.token);
+  const fetchUser = useAuthStore((s) => s.fetchUser);
 
   useEffect(() => {
     loadTournaments();
+    if (token && !user) fetchUser();
   }, []);
 
   const loadTournaments = async (params?: any) => {

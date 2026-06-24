@@ -45,6 +45,27 @@ export class MatchService {
     return this.matchRepo.save(match);
   }
 
+  async updateBestOf(tournamentId: string, matchId: string, userId: string, bestOf: number): Promise<Match> {
+    const tournament = await this.tournamentRepo.findOne({ where: { id: tournamentId } });
+    if (!tournament || tournament.creator_id !== userId) throw new ForbiddenException('无权操作');
+
+    const match = await this.matchRepo.findOne({ where: { id: matchId } });
+    if (!match) throw new NotFoundException('比赛不存在');
+
+    match.best_of = bestOf;
+    return this.matchRepo.save(match);
+  }
+
+  async updateBestOfByRound(tournamentId: string, userId: string, round: number, bestOf: number): Promise<void> {
+    const tournament = await this.tournamentRepo.findOne({ where: { id: tournamentId } });
+    if (!tournament || tournament.creator_id !== userId) throw new ForbiddenException('无权操作');
+
+    const bracket = await this.bracketRepo.findOne({ where: { tournament_id: tournamentId } });
+    if (!bracket) throw new NotFoundException('对阵表不存在');
+
+    await this.matchRepo.update({ bracket_id: bracket.id, round }, { best_of: bestOf });
+  }
+
   async submitResult(tournamentId: string, matchId: string, userId: string, result: { score_a: number; score_b: number; winner_id: string; notes?: string }): Promise<Match> {
     const tournament = await this.tournamentRepo.findOne({ where: { id: tournamentId } });
     if (!tournament || tournament.creator_id !== userId) throw new ForbiddenException('无权操作');

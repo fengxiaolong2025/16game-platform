@@ -49,6 +49,9 @@ export class Match {
   @Column({ nullable: true, name: 'completed_at' })
   completed_at: Date;
 
+  @Column({ default: 1, name: 'best_of' })
+  best_of: number; // 1=BO1, 3=BO3, 5=BO5
+
   @Column({ nullable: true })
   notes: string;
 
