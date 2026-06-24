@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Row, Col, Tag, Typography, Input, Select, Space, Empty, Spin, Button, Modal, Form, message, Popconfirm } from 'antd';
+import { Card, Row, Col, Tag, Typography, Input, Select, Space, Empty, Spin, Button, Modal, Form, message, Popconfirm, DatePicker, Radio, InputNumber } from 'antd';
 import { SearchOutlined, TrophyOutlined, UserOutlined, CalendarOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { tournamentApi } from '../api';
 import { useAuthStore } from '../store';
+import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
 
@@ -51,14 +52,41 @@ export function HomePage() {
 
   const handleEdit = (t: any, e: React.MouseEvent) => {
     e.stopPropagation();
-    editForm.setFieldsValue({ title: t.title, organizer_name: t.organizer_name, rules: t.rules });
+    editForm.setFieldsValue({
+      title: t.title,
+      game: t.game,
+      format: t.format,
+      participant_type: t.participant_type,
+      max_participants: t.max_participants,
+      team_size: t.team_size,
+      organizer_name: t.organizer_name,
+      rules: t.rules,
+      is_public: t.is_public,
+      time: t.registration_start_at && t.registration_end_at ? [dayjs(t.registration_start_at), dayjs(t.registration_end_at)] : undefined,
+      match_time: t.start_at && t.end_at ? [dayjs(t.start_at), dayjs(t.end_at)] : undefined,
+    });
     setEditModal({ open: true, tournament: t });
   };
 
   const handleEditSave = async () => {
     try {
       const values = await editForm.validateFields();
-      await tournamentApi.update(editModal.tournament.id, values);
+      const data: any = {
+        title: values.title,
+        game: values.game,
+        format: values.format,
+        participant_type: values.participant_type,
+        max_participants: values.max_participants,
+        team_size: values.team_size || undefined,
+        organizer_name: values.organizer_name || undefined,
+        rules: values.rules || undefined,
+        is_public: values.is_public !== false,
+        registration_start_at: values.time?.[0]?.toISOString(),
+        registration_end_at: values.time?.[1]?.toISOString(),
+        start_at: values.match_time?.[0]?.toISOString() || undefined,
+        end_at: values.match_time?.[1]?.toISOString() || undefined,
+      };
+      await tournamentApi.update(editModal.tournament.id, data);
       message.success('赛事已更新');
       setEditModal({ open: false, tournament: null });
       loadTournaments();
@@ -159,10 +187,41 @@ export function HomePage() {
         </Row>
       )}
 
-      <Modal title="编辑赛事" open={editModal.open} onOk={handleEditSave} onCancel={() => setEditModal({ open: false, tournament: null })} okText="保存" cancelText="取消">
+      <Modal title="编辑赛事" open={editModal.open} onOk={handleEditSave} onCancel={() => setEditModal({ open: false, tournament: null })} okText="保存" cancelText="取消" width={600}>
         <Form form={editForm} layout="vertical">
           <Form.Item name="title" label="赛事名称" rules={[{ required: true, message: '请输入赛事名称' }]}>
             <Input maxLength={50} />
+          </Form.Item>
+          <Form.Item name="game" label="游戏项目" rules={[{ required: true }]}>
+            <Select options={[
+              { label: '英雄联盟', value: '英雄联盟' },
+              { label: '王者荣耀', value: '王者荣耀' },
+              { label: 'CS2', value: 'CS2' },
+              { label: 'Valorant', value: 'Valorant' },
+              { label: 'DOTA2', value: 'DOTA2' },
+            ]} />
+          </Form.Item>
+          <Form.Item name="format" label="赛制" rules={[{ required: true }]}>
+            <Select options={[
+              { label: '单败淘汰', value: 'single_elimination' },
+              { label: '双败淘汰', value: 'double_elimination' },
+              { label: '循环赛', value: 'round_robin' },
+            ]} />
+          </Form.Item>
+          <Form.Item name="participant_type" label="参赛类型">
+            <Radio.Group options={[{ label: '个人赛', value: 'individual' }, { label: '团队赛', value: 'team' }]} />
+          </Form.Item>
+          <Form.Item name="max_participants" label="最大参赛数量" rules={[{ required: true }]}>
+            <Select options={[2, 4, 8, 16, 32, 64].map((n) => ({ label: `${n}`, value: n }))} />
+          </Form.Item>
+          <Form.Item name="team_size" label="每队人数（团队赛）">
+            <InputNumber min={2} max={10} style={{ width: '100%' }} />
+          </Form.Item>
+          <Form.Item name="time" label="报名时间">
+            <DatePicker.RangePicker showTime style={{ width: '100%' }} placeholder={['报名开始', '报名截止']} />
+          </Form.Item>
+          <Form.Item name="match_time" label="比赛时间">
+            <DatePicker.RangePicker showTime style={{ width: '100%' }} placeholder={['比赛开始', '预计结束']} />
           </Form.Item>
           <Form.Item name="organizer_name" label="主办方名称">
             <Input />
