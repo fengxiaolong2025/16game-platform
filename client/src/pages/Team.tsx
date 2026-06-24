@@ -67,6 +67,8 @@ export function TeamPage() {
 
   const memberColumns = [
     { title: '角色', dataIndex: 'role', render: (r: string) => r === 'captain' ? <Tag color="gold">队长</Tag> : <Tag>队员</Tag> },
+    { title: '昵称', render: (_: any, r: any) => r.user?.nickname || '-' },
+    { title: '游戏ID', render: (_: any, r: any) => r.user?.game_ids || '-' },
     { title: '状态', dataIndex: 'status', render: (s: string) => s === 'approved' ? <Tag color="green">已加入</Tag> : <Tag color="orange">待审核</Tag> },
     { title: '加入时间', dataIndex: 'joined_at', render: (v: string) => new Date(v).toLocaleDateString('zh-CN') },
     { title: '操作', render: (_: any, r: any) => r.status === 'pending' ? (
