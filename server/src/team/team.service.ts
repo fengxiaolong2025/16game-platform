@@ -116,6 +116,33 @@ export class TeamService {
     return this.teamRepo.save(team);
   }
 
+  /**
+   * Member leaves team on their own
+   */
+  async leaveTeam(teamId: string, userId: string): Promise<void> {
+    const team = await this.findById(teamId);
+    if (team.captain_id === userId) throw new ForbiddenException('队长不能退出，请使用解散战队功能');
+
+    const member = await this.memberRepo.findOne({ where: { team_id: teamId, user_id: userId, status: 'approved' } });
+    if (!member) throw new NotFoundException('您不是该战队成员');
+
+    await this.memberRepo.remove(member);
+    await this.teamRepo.update(teamId, { member_count: () => 'GREATEST(member_count - 1, 0)' });
+  }
+
+  /**
+   * Captain disbands the team (deletes team and all memberships)
+   */
+  async disbandTeam(teamId: string, captainId: string): Promise<void> {
+    const team = await this.findById(teamId);
+    if (team.captain_id !== captainId) throw new ForbiddenException('仅队长可解散战队');
+
+    // Delete all members
+    await this.memberRepo.delete({ team_id: teamId });
+    // Delete team
+    await this.teamRepo.remove(team);
+  }
+
   async findByCaptain(captainId: string): Promise<Team[]> {
     return this.teamRepo.find({ where: { captain_id: captainId } });
   }

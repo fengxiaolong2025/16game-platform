@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Card, Button, Table, Tag, Modal, Form, Input, message, Space, Popconfirm } from 'antd';
-import { PlusOutlined, CopyOutlined, UserAddOutlined } from '@ant-design/icons';
+import { PlusOutlined, CopyOutlined, UserAddOutlined, DeleteOutlined } from '@ant-design/icons';
 import { teamApi } from '../api';
+import { useAuthStore } from '../store';
 
 export function TeamPage() {
   const [teams, setTeams] = useState<any[]>([]);
@@ -11,6 +12,7 @@ export function TeamPage() {
   const [joinModal, setJoinModal] = useState(false);
   const [inviteCode, setInviteCode] = useState('');
   const [loading, setLoading] = useState(false);
+  const user = useAuthStore((s) => s.user);
 
   useEffect(() => { loadTeams(); }, []);
 
@@ -65,18 +67,50 @@ export function TeamPage() {
     } catch (err: any) { message.error('操作失败'); }
   };
 
+  const handleLeaveTeam = async (teamId: string) => {
+    try {
+      await teamApi.leaveTeam(teamId);
+      message.success('已退出战队');
+      loadTeams();
+    } catch (err: any) { message.error(err.response?.data?.message || '退出失败'); }
+  };
+
+  const handleDisbandTeam = async (teamId: string) => {
+    try {
+      await teamApi.disbandTeam(teamId);
+      message.success('战队已解散');
+      loadTeams();
+    } catch (err: any) { message.error(err.response?.data?.message || '解散失败'); }
+  };
+
   const memberColumns = [
     { title: '角色', dataIndex: 'role', render: (r: string) => r === 'captain' ? <Tag color="gold">队长</Tag> : <Tag>队员</Tag> },
     { title: '昵称', render: (_: any, r: any) => r.user?.nickname || '-' },
     { title: '游戏ID', render: (_: any, r: any) => r.user?.game_ids || '-' },
     { title: '状态', dataIndex: 'status', render: (s: string) => s === 'approved' ? <Tag color="green">已加入</Tag> : <Tag color="orange">待审核</Tag> },
     { title: '加入时间', dataIndex: 'joined_at', render: (v: string) => new Date(v).toLocaleDateString('zh-CN') },
-    { title: '操作', render: (_: any, r: any) => r.status === 'pending' ? (
-      <Space>
-        <Button size="small" type="primary" onClick={() => handleReview(r.id, 'approve')}>通过</Button>
-        <Button size="small" danger onClick={() => handleReview(r.id, 'reject')}>拒绝</Button>
-      </Space>
-    ) : null },
+    { title: '操作', render: (_: any, r: any) => {
+      if (r.status === 'pending') {
+        return (
+          <Space>
+            <Button size="small" type="primary" onClick={() => handleReview(r.id, 'approve')}>通过</Button>
+            <Button size="small" danger onClick={() => handleReview(r.id, 'reject')}>拒绝</Button>
+          </Space>
+        );
+      }
+      if (r.status === 'approved' && r.role !== 'captain' && selectedTeam?.captain_id === user?.id) {
+        return (
+          <Popconfirm title="确定踢出该成员？" onConfirm={async () => {
+            await teamApi.removeMember(selectedTeam.id, r.id);
+            message.success('已踢出');
+            loadMembers(selectedTeam.id);
+          }}>
+            <Button size="small" danger>踢出</Button>
+          </Popconfirm>
+        );
+      }
+      return null;
+    } },
   ];
 
   return (
@@ -106,6 +140,15 @@ export function TeamPage() {
               <Space>
                 <Button size="small" icon={<CopyOutlined />} onClick={() => handleInvite(team.id)}>邀请</Button>
                 <Button size="small" onClick={() => { setSelectedTeam(team); loadMembers(team.id); }}>管理成员</Button>
+                {team.captain_id === user?.id ? (
+                  <Popconfirm title="确定解散战队？所有成员将被移除，此操作不可撤销。" onConfirm={() => handleDisbandTeam(team.id)}>
+                    <Button size="small" danger icon={<DeleteOutlined />}>解散</Button>
+                  </Popconfirm>
+                ) : (
+                  <Popconfirm title="确定退出战队？" onConfirm={() => handleLeaveTeam(team.id)}>
+                    <Button size="small" danger>退出</Button>
+                  </Popconfirm>
+                )}
               </Space>
             </div>
             {inviteCode && inviteCode.startsWith(team.id) && (

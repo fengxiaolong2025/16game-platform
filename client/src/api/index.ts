@@ -72,6 +72,8 @@ export const teamApi = {
   reviewMember: (teamId: string, memberId: string, action: string) =>
     api.post(`/teams/${teamId}/members/${memberId}/review`, { action }),
   removeMember: (teamId: string, memberId: string) => api.delete(`/teams/${teamId}/members/${memberId}`),
+  leaveTeam: (teamId: string) => api.post(`/teams/${teamId}/leave`),
+  disbandTeam: (teamId: string) => api.delete(`/teams/${teamId}/disband`),
   myCaptainTeams: () => api.get('/teams/captain/my'),
 };
 

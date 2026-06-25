@@ -58,4 +58,16 @@ export class TeamController {
     await this.teamService.removeMember(id, req.user.id, memberId);
     return { message: '移除成功' };
   }
+
+  @Post(':id/leave')
+  async leaveTeam(@Param('id') id: string, @Request() req) {
+    await this.teamService.leaveTeam(id, req.user.id);
+    return { message: '已退出战队' };
+  }
+
+  @Delete(':id/disband')
+  async disbandTeam(@Param('id') id: string, @Request() req) {
+    await this.teamService.disbandTeam(id, req.user.id);
+    return { message: '战队已解散' };
+  }
 }
