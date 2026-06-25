@@ -3,6 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Tournament } from './tournament.entity';
 import { MatchService } from '../match/match.service';
+import { Registration } from '../registration/registration.entity';
+import { Bracket } from '../bracket/bracket.entity';
+import { Match } from '../match/match.entity';
+import { Ranking } from '../ranking/ranking.entity';
 
 @Injectable()
 export class TournamentService {
@@ -11,6 +15,14 @@ export class TournamentService {
     private tournamentRepo: Repository<Tournament>,
     @Inject(forwardRef(() => MatchService))
     private matchService: MatchService,
+    @InjectRepository(Registration)
+    private regRepo: Repository<Registration>,
+    @InjectRepository(Bracket)
+    private bracketRepo: Repository<Bracket>,
+    @InjectRepository(Match)
+    private matchRepo: Repository<Match>,
+    @InjectRepository(Ranking)
+    private rankingRepo: Repository<Ranking>,
   ) {}
 
   async create(userId: string, data: Partial<Tournament>): Promise<Tournament> {
@@ -97,7 +109,20 @@ export class TournamentService {
   async delete(id: string, userId: string): Promise<void> {
     const tournament = await this.findById(id);
     if (tournament.creator_id !== userId) throw new ForbiddenException('无权删除');
-    // 允许删除任何状态的赛事（completed 也可以删）
+
+    // Delete all related data first to avoid FK constraint errors
+    // 1. Delete rankings
+    await this.rankingRepo.delete({ tournament_id: id });
+    // 2. Delete matches (need bracket_id first)
+    const brackets = await this.bracketRepo.find({ where: { tournament_id: id } });
+    for (const b of brackets) {
+      await this.matchRepo.delete({ bracket_id: b.id });
+    }
+    // 3. Delete brackets
+    await this.bracketRepo.delete({ tournament_id: id });
+    // 4. Delete registrations
+    await this.regRepo.delete({ tournament_id: id });
+    // 5. Delete tournament
     await this.tournamentRepo.remove(tournament);
   }
 
