@@ -19,6 +19,8 @@ export function TournamentManagePage() {
   const [scheduleTime, setScheduleTime] = useState<any>(null);
   const [teamRegs, setTeamRegs] = useState<any[]>([]);
 
+  const isTeam = tournament?.participant_type === 'team';
+
   useEffect(() => { loadData(); }, [id]);
 
   const loadData = async () => {
@@ -27,13 +29,13 @@ export function TournamentManagePage() {
       const tRes = await tournamentApi.get(id!);
       setTournament(tRes.data);
 
-      const isTeam = tRes.data.participant_type === 'team';
+      const teamMode = tRes.data.participant_type === 'team';
       const fetches: Promise<any>[] = [
         registrationApi.list(id!).catch(() => ({ data: [] })),
         bracketApi.get(id!).catch(() => ({ data: null })),
         matchApi.list(id!).catch(() => ({ data: [] })),
       ];
-      if (isTeam) {
+      if (teamMode) {
         fetches.push(registrationApi.teamRegistrations(id!).catch(() => ({ data: [] })));
       }
 
@@ -41,7 +43,7 @@ export function TournamentManagePage() {
       setRegistrations(results[0].data);
       setBracket(results[1].data);
       setMatches(results[2].data);
-      if (isTeam && results[3]) {
+      if (teamMode && results[3]) {
         setTeamRegs(results[3].data);
       }
     } catch { message.error('加载失败'); }
