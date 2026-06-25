@@ -59,6 +59,7 @@ export function ProfilePage() {
               { label: 'CS2', value: 'CS2' },
               { label: 'Valorant', value: 'Valorant' },
               { label: 'DOTA2', value: 'DOTA2' },
+              { label: 'DOTA1', value: 'DOTA1' },
             ]} />
           </Form.Item>
           <Form.Item name="game_ids" label="游戏内ID">

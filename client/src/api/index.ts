@@ -18,6 +18,9 @@ export const tournamentApi = {
   publish: (id: string) => api.post(`/tournaments/${id}/publish`),
   advanceStatus: (id: string, status: string) => api.post(`/tournaments/${id}/advance`, { status }),
   delete: (id: string) => api.delete(`/tournaments/${id}`),
+  createNextStage: (id: string, data: { format: string; stage_name: string; advance_count: number; max_participants: number }) =>
+    api.post(`/tournaments/${id}/create-next-stage`, data),
+  getNextStages: (id: string) => api.get(`/tournaments/${id}/next-stages`),
 };
 
 export const registrationApi = {

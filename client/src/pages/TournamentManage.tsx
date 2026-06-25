@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { Card, Tabs, Table, Button, Tag, Space, message, Modal, Popconfirm, Spin, Empty, DatePicker, Select } from 'antd';
-import { PlayCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined, EditOutlined } from '@ant-design/icons';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Card, Tabs, Table, Button, Tag, Space, message, Modal, Popconfirm, Spin, Empty, DatePicker, Select, Form, InputNumber, Input } from 'antd';
+import { PlayCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined, EditOutlined, ForwardOutlined } from '@ant-design/icons';
 import { tournamentApi, registrationApi, bracketApi, matchApi } from '../api';
 import dayjs from 'dayjs';
 
@@ -18,6 +18,10 @@ export function TournamentManagePage() {
   const [scheduleModal, setScheduleModal] = useState<{ open: boolean; match: any }>({ open: false, match: null });
   const [scheduleTime, setScheduleTime] = useState<any>(null);
   const [teamRegs, setTeamRegs] = useState<any[]>([]);
+  const [nextStageModal, setNextStageModal] = useState(false);
+  const [nextStageForm] = Form.useForm();
+  const [rankings, setRankings] = useState<any[]>([]);
+  const navigate = useNavigate();
 
   const isTeam = tournament?.participant_type === 'team';
 
@@ -46,8 +50,31 @@ export function TournamentManagePage() {
       if (teamMode && results[3]) {
         setTeamRegs(results[3].data);
       }
+
+      // Load rankings if tournament is completed
+      if (tRes.data.status === 'completed') {
+        try {
+          const rRes = await matchApi.list(id!);
+          // Use rankings API
+          const rankingRes = await fetch(`/api/tournaments/${id}/rankings`).then(r => r.json()).catch(() => []);
+          setRankings(rankingRes || []);
+        } catch { /* ignore */ }
+      }
     } catch { message.error('加载失败'); }
     finally { setLoading(false); }
+  };
+
+  const handleCreateNextStage = async () => {
+    try {
+      const values = await nextStageForm.validateFields();
+      const res = await tournamentApi.createNextStage(id!, values);
+      message.success('下一阶段赛事已创建');
+      setNextStageModal(false);
+      navigate(`/t/${res.data.id}/manage`);
+    } catch (err: any) {
+      if (err?.errorFields) return;
+      message.error(err.response?.data?.message || '创建失败');
+    }
   };
 
   const handleAdvanceStatus = async (newStatus: string) => {
@@ -192,6 +219,14 @@ export function TournamentManagePage() {
             {tournament.status === 'bracket' && <Button onClick={() => handleAdvanceStatus('registration')}>← 退回报名阶段</Button>}
             {tournament.status === 'in_progress' && <Button onClick={() => handleAdvanceStatus('bracket')}>← 退回对阵阶段</Button>}
             {tournament.status === 'completed' && <Button onClick={() => handleAdvanceStatus('in_progress')}>← 重新开始比赛</Button>}
+            {tournament.status === 'completed' && !tournament.parent_tournament_id && (
+              <Button type="primary" icon={<ForwardOutlined />} onClick={() => {
+                nextStageForm.setFieldsValue({ format: 'single_elimination', stage_name: '淘汰赛', advance_count: Math.min(4, rankings.length || 4), max_participants: Math.min(4, rankings.length || 4) });
+                setNextStageModal(true);
+              }}>
+                创建下一阶段
+              </Button>
+            )}
           </Space>
         </div>
       </Card>
@@ -395,6 +430,42 @@ export function TournamentManagePage() {
             )}
           </div>
         )}
+      </Modal>
+
+      <Modal title="创建下一阶段赛事" open={nextStageModal} onOk={handleCreateNextStage} onCancel={() => setNextStageModal(false)} okText="创建" cancelText="取消" width={480}>
+        <div style={{ marginBottom: 16, padding: 12, background: '#f0f5ff', borderRadius: 8 }}>
+          <p style={{ margin: 0 }}><strong>{tournament.title}</strong></p>
+          <p style={{ margin: '4px 0 0', color: '#666', fontSize: 13 }}>
+            从第一阶段排名中选择前N名晋级到下一阶段
+          </p>
+          {rankings.length > 0 && (
+            <div style={{ marginTop: 8, maxHeight: 150, overflowY: 'auto' }}>
+              {rankings.slice(0, 8).map((r: any) => (
+                <div key={r.participant_id} style={{ fontSize: 13, color: '#333' }}>
+                  {r.rank <= 3 ? ['🥇', '🥈', '🥉'][r.rank - 1] : `${r.rank}.`} {r.participant_name} — {r.wins}胜{r.losses}负 {r.score}分
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <Form form={nextStageForm} layout="vertical">
+          <Form.Item name="stage_name" label="阶段名称" rules={[{ required: true }]}>
+            <Input placeholder="如：淘汰赛、决赛圈" />
+          </Form.Item>
+          <Form.Item name="format" label="赛制" rules={[{ required: true }]}>
+            <Select options={[
+              { label: '单败淘汰', value: 'single_elimination' },
+              { label: '双败淘汰', value: 'double_elimination' },
+              { label: '循环赛', value: 'round_robin' },
+            ]} />
+          </Form.Item>
+          <Form.Item name="advance_count" label="晋级人数/队伍数" rules={[{ required: true }]}>
+            <InputNumber min={2} max={16} style={{ width: '100%' }} />
+          </Form.Item>
+          <Form.Item name="max_participants" label="最大参赛数">
+            <InputNumber min={2} max={64} style={{ width: '100%' }} />
+          </Form.Item>
+        </Form>
       </Modal>
     </div>
   );

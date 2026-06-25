@@ -151,4 +151,67 @@ export class TournamentService {
 
     return saved;
   }
+
+  /**
+   * Create next stage tournament from previous stage rankings
+   * Top N participants from stage 1 advance to stage 2
+   */
+  async createNextStage(parentId: string, userId: string, body: { format: string; stage_name: string; advance_count: number; max_participants: number }): Promise<Tournament> {
+    const parent = await this.findById(parentId);
+    if (parent.creator_id !== userId) throw new ForbiddenException('无权操作');
+    if (parent.status !== 'completed') throw new ForbiddenException('前一阶段赛事未结束，无法创建下一阶段');
+
+    // Get top N from rankings
+    const rankings = await this.rankingRepo.find({
+      where: { tournament_id: parentId },
+      order: { rank: 'ASC' },
+      take: body.advance_count,
+    });
+
+    if (rankings.length < 2) throw new ForbiddenException('晋级人数不足2人');
+
+    // Create next stage tournament
+    const nextStage = this.tournamentRepo.create({
+      creator_id: userId,
+      title: `${parent.title} - ${body.stage_name}`,
+      game: parent.game,
+      format: body.format,
+      participant_type: parent.participant_type,
+      team_size: parent.team_size,
+      max_participants: body.max_participants || rankings.length,
+      status: 'draft',
+      is_public: parent.is_public,
+      organizer_name: parent.organizer_name,
+      rules: parent.rules,
+      config: parent.config,
+      parent_tournament_id: parentId,
+      stage_name: body.stage_name,
+      advance_count: body.advance_count,
+    });
+
+    const saved = await this.tournamentRepo.save(nextStage);
+
+    // Auto-create registrations for advancing participants
+    for (const r of rankings) {
+      await this.regRepo.save({
+        tournament_id: saved.id,
+        user_id: r.participant_id, // For team tournaments this is the registration id, for individual it's user id
+        type: parent.participant_type === 'team' ? 'team' : 'individual',
+        custom_fields: {
+          player_name: r.participant_name,
+          team_name: r.participant_name,
+        },
+        status: 'approved', // Auto-approve for next stage
+      });
+    }
+
+    return saved;
+  }
+
+  async getNextStages(parentId: string): Promise<Tournament[]> {
+    return this.tournamentRepo.find({
+      where: { parent_tournament_id: parentId },
+      order: { created_at: 'ASC' },
+    });
+  }
 }

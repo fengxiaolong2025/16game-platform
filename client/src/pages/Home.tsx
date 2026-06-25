@@ -14,6 +14,7 @@ const gameColors: Record<string, string> = {
   'CS2': '#DE9B35',
   'Valorant': '#FF4655',
   'DOTA2': '#E74C3C',
+  'DOTA1': '#8E44AD',
 };
 
 const statusMap: Record<string, { label: string; color: string }> = {
@@ -137,6 +138,7 @@ export function HomePage() {
             { label: 'CS2', value: 'CS2' },
             { label: 'Valorant', value: 'Valorant' },
             { label: 'DOTA2', value: 'DOTA2' },
+            { label: 'DOTA1', value: 'DOTA1' },
           ]}
         />
         <Select
@@ -202,6 +204,7 @@ export function HomePage() {
               { label: 'CS2', value: 'CS2' },
               { label: 'Valorant', value: 'Valorant' },
               { label: 'DOTA2', value: 'DOTA2' },
+            { label: 'DOTA1', value: 'DOTA1' },
             ]} />
           </Form.Item>
           <Form.Item name="format" label="赛制" rules={[{ required: true }]}>

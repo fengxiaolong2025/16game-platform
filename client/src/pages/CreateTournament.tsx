@@ -11,6 +11,7 @@ const games = [
   { label: '🎮 CS2', value: 'CS2' },
   { label: '🎮 Valorant', value: 'Valorant' },
   { label: '🎮 DOTA2', value: 'DOTA2' },
+  { label: '🎮 DOTA1', value: 'DOTA1' },
 ];
 
 const formats = [

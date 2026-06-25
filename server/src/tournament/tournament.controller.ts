@@ -46,6 +46,17 @@ export class TournamentController {
     return this.tournamentService.advanceStatus(id, req.user.id, status);
   }
 
+  @Post(':id/create-next-stage')
+  @UseGuards(JwtAuthGuard)
+  async createNextStage(@Param('id') id: string, @Request() req, @Body() body: { format: string; stage_name: string; advance_count: number; max_participants: number }) {
+    return this.tournamentService.createNextStage(id, req.user.id, body);
+  }
+
+  @Get(':id/next-stages')
+  async getNextStages(@Param('id') id: string) {
+    return this.tournamentService.getNextStages(id);
+  }
+
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   async delete(@Param('id') id: string, @Request() req) {

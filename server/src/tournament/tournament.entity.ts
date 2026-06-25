@@ -46,6 +46,15 @@ export class Tournament {
   @Column({ default: true, name: 'is_public' })
   is_public: boolean;
 
+  @Column({ nullable: true, name: 'parent_tournament_id' })
+  parent_tournament_id: string;
+
+  @Column({ nullable: true, name: 'stage_name' })
+  stage_name: string;
+
+  @Column({ nullable: true, name: 'advance_count' })
+  advance_count: number;
+
   @Column({ nullable: true, name: 'organizer_name' })
   organizer_name: string;
 
