@@ -105,7 +105,7 @@ export class TeamService {
     if (member.user_id === captainId) throw new ForbiddenException('不能移除队长');
 
     await this.memberRepo.remove(member);
-    await this.teamRepo.update(teamId, { member_count: () => 'GREATEST(member_count - 1, 0)' });
+    await this.teamRepo.update(teamId, { member_count: () => 'MAX(member_count - 1, 0)' });
   }
 
   async update(teamId: string, userId: string, data: { name?: string; tag?: string; logo?: string; description?: string }): Promise<Team> {
@@ -127,7 +127,7 @@ export class TeamService {
     if (!member) throw new NotFoundException('您不是该战队成员');
 
     await this.memberRepo.remove(member);
-    await this.teamRepo.update(teamId, { member_count: () => 'GREATEST(member_count - 1, 0)' });
+    await this.teamRepo.update(teamId, { member_count: () => 'MAX(member_count - 1, 0)' });
   }
 
   /**
