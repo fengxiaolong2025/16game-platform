@@ -192,11 +192,20 @@ export class TournamentService {
     const saved = await this.tournamentRepo.save(nextStage);
 
     // Auto-create registrations for advancing participants
+    // participant_id in rankings is the registration ID from parent tournament
+    // We need to look up the actual user_id and team_id from parent registrations
+    const parentRegs = await this.regRepo.find({ where: { tournament_id: parentId } });
+    const regMap = new Map(parentRegs.map(r => [r.id, r]));
+
     for (const r of rankings) {
+      const parentReg = regMap.get(r.participant_id);
+      if (!parentReg) continue;
+
       await this.regRepo.save({
         tournament_id: saved.id,
-        user_id: r.participant_id, // For team tournaments this is the registration id, for individual it's user id
+        user_id: parentReg.user_id, // Use actual user_id from parent registration
         type: parent.participant_type === 'team' ? 'team' : 'individual',
+        team_id: parentReg.team_id, // Carry over team_id for team tournaments
         custom_fields: {
           player_name: r.participant_name,
           team_name: r.participant_name,
