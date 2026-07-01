@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Form, Input, Button, Tabs, message } from 'antd';
-import { PhoneOutlined, MailOutlined, LockOutlined, UserOutlined } from '@ant-design/icons';
+import { LockOutlined, UserOutlined } from '@ant-design/icons';
 import { authApi } from '../api';
 import { useAuthStore } from '../store';
 
@@ -9,34 +9,6 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const login = useAuthStore((s) => s.login);
-
-  const handlePhoneLogin = async (values: { phone: string }) => {
-    setLoading(true);
-    try {
-      const res = await authApi.loginByPhone(values.phone);
-      login(res.data.token, res.data.user);
-      message.success('登录成功');
-      navigate('/');
-    } catch (err: any) {
-      message.error(err.response?.data?.message || '登录失败');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleEmailLogin = async (values: { email: string; password: string }) => {
-    setLoading(true);
-    try {
-      const res = await authApi.loginByEmail(values.email, values.password);
-      login(res.data.token, res.data.user);
-      message.success('登录成功');
-      navigate('/');
-    } catch (err: any) {
-      message.error(err.response?.data?.message || '登录失败');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleUsernameRegister = async (values: { username: string; password: string; nickname?: string }) => {
     setLoading(true);
@@ -107,37 +79,6 @@ export function LoginPage() {
                 </Form.Item>
                 <Form.Item>
                   <Button type="primary" htmlType="submit" block loading={loading}>注册并登录</Button>
-                </Form.Item>
-              </Form>
-            ),
-          },
-          {
-            key: 'phone',
-            label: <span><PhoneOutlined /> 手机号</span>,
-            children: (
-              <Form onFinish={handlePhoneLogin} size="large">
-                <Form.Item name="phone" rules={[{ required: true, message: '请输入手机号' }, { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确' }]}>
-                  <Input placeholder="请输入手机号" prefix={<PhoneOutlined />} />
-                </Form.Item>
-                <Form.Item>
-                  <Button type="primary" htmlType="submit" block loading={loading}>获取验证码登录</Button>
-                </Form.Item>
-              </Form>
-            ),
-          },
-          {
-            key: 'email',
-            label: <span><MailOutlined /> 邮箱</span>,
-            children: (
-              <Form onFinish={handleEmailLogin} size="large">
-                <Form.Item name="email" rules={[{ required: true, message: '请输入邮箱' }, { type: 'email', message: '邮箱格式不正确' }]}>
-                  <Input placeholder="请输入邮箱" prefix={<MailOutlined />} />
-                </Form.Item>
-                <Form.Item name="password" rules={[{ required: true, message: '请输入密码' }]}>
-                  <Input.Password placeholder="请输入密码" prefix={<LockOutlined />} />
-                </Form.Item>
-                <Form.Item>
-                  <Button type="primary" htmlType="submit" block loading={loading}>登录</Button>
                 </Form.Item>
               </Form>
             ),
