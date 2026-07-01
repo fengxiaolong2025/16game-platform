@@ -1,6 +1,6 @@
 import { Outlet, useNavigate, Link } from 'react-router-dom';
 import { Layout, Menu, Button, Badge, Dropdown, Avatar } from 'antd';
-import { TrophyOutlined, PlusOutlined, UserOutlined, BellOutlined, TeamOutlined, LogoutOutlined } from '@ant-design/icons';
+import { TrophyOutlined, PlusOutlined, UserOutlined, BellOutlined, TeamOutlined, LogoutOutlined, SettingOutlined } from '@ant-design/icons';
 import { useAuthStore } from '../store/auth';
 import { useEffect } from 'react';
 import { notificationApi } from '../api';
@@ -26,6 +26,7 @@ export function AppLayout() {
     items: [
       { key: 'profile', icon: <UserOutlined />, label: '个人中心', onClick: () => navigate('/me') },
       { key: 'teams', icon: <TeamOutlined />, label: '我的战队', onClick: () => navigate('/teams') },
+      ...(user && (user as any).role === 1 ? [{ key: 'admin', icon: <SettingOutlined />, label: '用户管理', onClick: () => navigate('/admin') }] : []),
       { type: 'divider' as const },
       { key: 'logout', icon: <LogoutOutlined />, label: '退出登录', onClick: handleLogout },
     ],

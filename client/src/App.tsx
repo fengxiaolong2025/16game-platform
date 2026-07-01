@@ -10,6 +10,7 @@ import { TournamentDetailPage } from './pages/TournamentDetail';
 import { TournamentManagePage } from './pages/TournamentManage';
 import { TeamPage } from './pages/Team';
 import { NotificationsPage } from './pages/Notifications';
+import { AdminPage } from './pages/Admin';
 import { AppLayout } from './components/AppLayout';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -33,6 +34,7 @@ export default function App() {
               <Route path="me" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
               <Route path="teams" element={<ProtectedRoute><TeamPage /></ProtectedRoute>} />
               <Route path="notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+              <Route path="admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
             </Route>
           </Routes>
         </BrowserRouter>

@@ -9,6 +9,11 @@ export const authApi = {
   getMe: () => api.get('/users/me'),
   updateProfile: (data: any) => api.put('/users/me', data),
   getUser: (id: string) => api.get(`/users/${id}`),
+  // Admin
+  adminGetUsers: () => api.get('/users/admin/users'),
+  adminDeleteUser: (id: string) => api.delete(`/users/admin/users/${id}`),
+  adminResetPassword: (id: string, password: string) => api.put(`/users/admin/users/${id}/password`, { password }),
+  adminUpdateStatus: (id: string, status: string) => api.put(`/users/admin/users/${id}/status`, { status }),
 };
 
 export const tournamentApi = {

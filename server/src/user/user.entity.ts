@@ -35,6 +35,9 @@ export class User {
   @Column({ default: 'active' })
   status: string;
 
+  @Column({ default: 0 })
+  role: number; // 0=user, 1=admin
+
   @CreateDateColumn({ name: 'created_at' })
   created_at: Date;
 

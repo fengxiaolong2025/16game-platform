@@ -8,6 +8,8 @@ interface User {
   phone?: string;
   email?: string;
   games?: string[];
+  role?: number;
+  username?: string;
 }
 
 interface AuthState {

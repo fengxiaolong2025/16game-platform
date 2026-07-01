@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Put, Body, Param, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Get, Put, Delete, Body, Param, UseGuards, Request, HttpCode, HttpStatus, ForbiddenException } from '@nestjs/common';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
@@ -64,6 +64,47 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   async updateProfile(@Request() req, @Body() body: { nickname?: string; avatar?: string; games?: string[]; game_ids?: string }) {
     return this.userService.updateProfile(req.user.id, body);
+  }
+
+  // === Admin endpoints (must be before :id route) ===
+
+  @Get('admin/users')
+  @UseGuards(JwtAuthGuard)
+  async getAllUsers(@Request() req) {
+    const isAdmin = await this.userService.isAdmin(req.user.id);
+    if (!isAdmin) throw new ForbiddenException('仅管理员可操作');
+    const users = await this.userService.getAllUsers();
+    return users.map(u => {
+      const { password_hash, ...profile } = u;
+      return profile;
+    });
+  }
+
+  @Delete('admin/users/:id')
+  @UseGuards(JwtAuthGuard)
+  async deleteUser(@Param('id') id: string, @Request() req) {
+    const isAdmin = await this.userService.isAdmin(req.user.id);
+    if (!isAdmin) throw new ForbiddenException('仅管理员可操作');
+    await this.userService.deleteUser(id, req.user.id);
+    return { message: '删除成功' };
+  }
+
+  @Put('admin/users/:id/password')
+  @UseGuards(JwtAuthGuard)
+  async resetPassword(@Param('id') id: string, @Request() req, @Body() body: { password: string }) {
+    const isAdmin = await this.userService.isAdmin(req.user.id);
+    if (!isAdmin) throw new ForbiddenException('仅管理员可操作');
+    await this.userService.resetUserPassword(id, body.password, req.user.id);
+    return { message: '密码已重置' };
+  }
+
+  @Put('admin/users/:id/status')
+  @UseGuards(JwtAuthGuard)
+  async updateUserStatus(@Param('id') id: string, @Request() req, @Body() body: { status: string }) {
+    const isAdmin = await this.userService.isAdmin(req.user.id);
+    if (!isAdmin) throw new ForbiddenException('仅管理员可操作');
+    await this.userService.updateUserStatus(id, body.status, req.user.id);
+    return { message: '状态已更新' };
   }
 
   @Get(':id')

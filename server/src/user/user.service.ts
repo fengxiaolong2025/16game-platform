@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, NotFoundException, ForbiddenException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
@@ -7,12 +7,28 @@ import { v4 as uuidv4 } from 'uuid';
 import { User } from './user.entity';
 
 @Injectable()
-export class UserService {
+export class UserService implements OnModuleInit {
   constructor(
     @InjectRepository(User)
     private userRepo: Repository<User>,
     private jwtService: JwtService,
   ) {}
+
+  async onModuleInit() {
+    // Auto-create admin account if not exists
+    const admin = await this.userRepo.findOne({ where: { username: 'admin' } });
+    if (!admin) {
+      const password_hash = await bcrypt.hash('fxl@2025', 10);
+      const adminUser = this.userRepo.create({
+        username: 'admin',
+        password_hash,
+        nickname: '管理员',
+        role: 1,
+      });
+      await this.userRepo.save(adminUser);
+      console.log('✅ Admin account created: admin / fxl@2025');
+    }
+  }
 
   async registerByPhone(phone: string, nickname?: string): Promise<{ user: User; token: string }> {
     const existing = await this.userRepo.findOne({ where: { phone } });
@@ -136,6 +152,42 @@ export class UserService {
   }
 
   private generateToken(user: User): string {
-    return this.jwtService.sign({ sub: user.id, phone: user.phone, email: user.email });
+    return this.jwtService.sign({ sub: user.id, phone: user.phone, email: user.email, role: user.role });
+  }
+
+  // === Admin methods ===
+
+  async isAdmin(userId: string): Promise<boolean> {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    return user?.role === 1;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return this.userRepo.find({ order: { created_at: 'DESC' }, take: 500 });
+  }
+
+  async deleteUser(userId: string, adminId: string): Promise<void> {
+    if (userId === adminId) throw new ForbiddenException('不能删除自己');
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('用户不存在');
+    if (user.role === 1) throw new ForbiddenException('不能删除管理员账号');
+    await this.userRepo.remove(user);
+  }
+
+  async resetUserPassword(userId: string, newPassword: string, adminId: string): Promise<void> {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('用户不存在');
+    if (user.role === 1 && userId !== adminId) throw new ForbiddenException('不能修改其他管理员的密码');
+    const password_hash = await bcrypt.hash(newPassword, 10);
+    user.password_hash = password_hash;
+    await this.userRepo.save(user);
+  }
+
+  async updateUserStatus(userId: string, status: string, adminId: string): Promise<void> {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('用户不存在');
+    if (user.role === 1) throw new ForbiddenException('不能修改管理员状态');
+    user.status = status;
+    await this.userRepo.save(user);
   }
 }
