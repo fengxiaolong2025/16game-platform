@@ -17,6 +17,11 @@ export class TeamController {
     return this.teamService.findByUser(req.user.id);
   }
 
+  @Get('all')
+  async all() {
+    return this.teamService.findAll();
+  }
+
   @Get('captain/my')
   async myCaptainTeams(@Request() req) {
     return this.teamService.findByCaptain(req.user.id);
@@ -46,6 +51,11 @@ export class TeamController {
   @Post('join')
   async join(@Request() req, @Body() body: { code: string }) {
     return this.teamService.joinByInvite(body.code, req.user.id);
+  }
+
+  @Post(':id/join')
+  async joinById(@Param('id') id: string, @Request() req) {
+    return this.teamService.joinById(id, req.user.id);
   }
 
   @Post(':id/members/:memberId/review')

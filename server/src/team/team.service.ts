@@ -79,6 +79,24 @@ export class TeamService {
     return this.memberRepo.save(member);
   }
 
+  async joinById(teamId: string, userId: string): Promise<TeamMember> {
+    const team = await this.findById(teamId);
+
+    const existing = await this.memberRepo.findOne({ where: { team_id: teamId, user_id: userId } });
+    if (existing) {
+      if (existing.status === 'approved') throw new ForbiddenException('已是战队成员');
+      if (existing.status === 'pending') throw new ForbiddenException('申请已提交，等待审核');
+    }
+
+    const member = this.memberRepo.create({
+      team_id: teamId,
+      user_id: userId,
+      role: 'member',
+      status: 'pending',
+    });
+    return this.memberRepo.save(member);
+  }
+
   async reviewMember(teamId: string, captainId: string, memberId: string, action: 'approve' | 'reject'): Promise<TeamMember> {
     const team = await this.findById(teamId);
     if (team.captain_id !== captainId) throw new ForbiddenException('仅队长可审核');
@@ -145,6 +163,10 @@ export class TeamService {
 
   async findByCaptain(captainId: string): Promise<Team[]> {
     return this.teamRepo.find({ where: { captain_id: captainId } });
+  }
+
+  async findAll(): Promise<Team[]> {
+    return this.teamRepo.find({ order: { created_at: 'DESC' }, take: 100 });
   }
 
   async findByIdSilent(id: string): Promise<Team | null> {

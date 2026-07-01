@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Card, Button, Table, Tag, Modal, Form, Input, message, Space, Popconfirm } from 'antd';
+import { Card, Button, Table, Tag, Modal, Form, Input, message, Space, Popconfirm, Tabs } from 'antd';
 import { PlusOutlined, CopyOutlined, UserAddOutlined, DeleteOutlined } from '@ant-design/icons';
 import { teamApi } from '../api';
 import { useAuthStore } from '../store';
@@ -10,6 +10,7 @@ export function TeamPage() {
   const [members, setMembers] = useState<any[]>([]);
   const [createModal, setCreateModal] = useState(false);
   const [joinModal, setJoinModal] = useState(false);
+  const [allTeams, setAllTeams] = useState<any[]>([]);
   const [inviteCode, setInviteCode] = useState('');
   const [loading, setLoading] = useState(false);
   const user = useAuthStore((s) => s.user);
@@ -52,10 +53,27 @@ export function TeamPage() {
     setLoading(true);
     try {
       await teamApi.join(values.code);
-      message.success('加入申请已提交');
+      message.success('加入申请已提交，等待队长审核');
       setJoinModal(false);
     } catch (err: any) { message.error(err.response?.data?.message || '加入失败'); }
     finally { setLoading(false); }
+  };
+
+  const openJoinModal = async () => {
+    try {
+      const res = await teamApi.allTeams();
+      setAllTeams(res.data || []);
+    } catch { /* ignore */ }
+    setJoinModal(true);
+  };
+
+  const handleJoinById = async (teamId: string, teamName: string) => {
+    try {
+      await teamApi.joinById(teamId);
+      message.success(`已申请加入「${teamName}」，等待队长审核`);
+      setJoinModal(false);
+      loadTeams();
+    } catch (err: any) { message.error(err.response?.data?.message || '加入失败'); }
   };
 
   const handleReview = async (memberId: string, action: 'approve' | 'reject') => {
@@ -118,7 +136,7 @@ export function TeamPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <h2>我的战队</h2>
         <Space>
-          <Button icon={<UserAddOutlined />} onClick={() => setJoinModal(true)}>加入战队</Button>
+          <Button icon={<UserAddOutlined />} onClick={openJoinModal}>加入战队</Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateModal(true)}>创建战队</Button>
         </Space>
       </div>
@@ -182,13 +200,45 @@ export function TeamPage() {
         </Form>
       </Modal>
 
-      <Modal title="加入战队" open={joinModal} onCancel={() => setJoinModal(false)} footer={null}>
-        <Form onFinish={handleJoin} layout="vertical">
-          <Form.Item name="code" label="邀请码" rules={[{ required: true }]}>
-            <Input placeholder="输入队长分享的邀请码" />
-          </Form.Item>
-          <Button type="primary" htmlType="submit" loading={loading} block>申请加入</Button>
-        </Form>
+      <Modal title="加入战队" open={joinModal} onCancel={() => setJoinModal(false)} footer={null} width={520}>
+        <Tabs items={[
+          {
+            key: 'list',
+            label: '浏览战队',
+            children: (
+              <div>
+                {allTeams.length === 0 ? (
+                  <p style={{ textAlign: 'center', color: '#999', padding: 20 }}>暂无战队，快去创建第一个吧！</p>
+                ) : (
+                  allTeams.map((team) => (
+                    <Card key={team.id} size="small" style={{ marginBottom: 8 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <strong>{team.name}</strong>
+                          {team.tag && <Tag style={{ marginLeft: 8 }}>{team.tag}</Tag>}
+                          <span style={{ color: '#999', marginLeft: 8, fontSize: 13 }}>{team.member_count}人</span>
+                        </div>
+                        <Button size="small" type="primary" onClick={() => handleJoinById(team.id, team.name)}>申请加入</Button>
+                      </div>
+                    </Card>
+                  ))
+                )}
+              </div>
+            ),
+          },
+          {
+            key: 'code',
+            label: '邀请码加入',
+            children: (
+              <Form onFinish={handleJoin} layout="vertical">
+                <Form.Item name="code" label="邀请码" rules={[{ required: true }]}>
+                  <Input placeholder="输入队长分享的邀请码" />
+                </Form.Item>
+                <Button type="primary" htmlType="submit" loading={loading} block>申请加入</Button>
+              </Form>
+            ),
+          },
+        ]} />
       </Modal>
     </div>
   );
