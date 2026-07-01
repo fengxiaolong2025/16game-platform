@@ -58,6 +58,36 @@ export class UserService {
     return { user, token };
   }
 
+  async registerByUsername(username: string, password: string, nickname?: string): Promise<{ user: User; token: string }> {
+    const existing = await this.userRepo.findOne({ where: { username } });
+    if (existing) {
+      throw new ConflictException('该用户名已存在');
+    }
+    const password_hash = await bcrypt.hash(password, 10);
+    const user = this.userRepo.create({
+      username,
+      password_hash,
+      nickname: nickname || username,
+    });
+    await this.userRepo.save(user);
+    const token = this.generateToken(user);
+    return { user, token };
+  }
+
+  async loginByUsername(username: string, password: string): Promise<{ user: User; token: string }> {
+    const user = await this.userRepo.findOne({ where: { username } });
+    if (!user || !user.password_hash) {
+      throw new UnauthorizedException('用户名或密码错误');
+    }
+    const valid = await bcrypt.compare(password, user.password_hash);
+    if (!valid) {
+      throw new UnauthorizedException('用户名或密码错误');
+    }
+    await this.userRepo.update(user.id, { last_login_at: new Date() });
+    const token = this.generateToken(user);
+    return { user, token };
+  }
+
   async loginByPhone(phone: string): Promise<{ user: User; token: string }> {
     let user = await this.userRepo.findOne({ where: { phone } });
     if (!user) {

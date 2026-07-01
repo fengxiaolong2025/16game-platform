@@ -3,7 +3,9 @@ import api from './client';
 export const authApi = {
   loginByPhone: (phone: string) => api.post('/users/login/phone', { phone, code: '000000' }),
   loginByEmail: (email: string, password: string) => api.post('/users/login/email', { email, password }),
+  loginByUsername: (username: string, password: string) => api.post('/users/login/username', { username, password }),
   registerByEmail: (email: string, password: string, nickname?: string) => api.post('/users/register/email', { email, password, nickname }),
+  registerByUsername: (username: string, password: string, nickname?: string) => api.post('/users/register/username', { username, password, nickname }),
   getMe: () => api.get('/users/me'),
   updateProfile: (data: any) => api.put('/users/me', data),
   getUser: (id: string) => api.get(`/users/${id}`),

@@ -17,6 +17,11 @@ export class UserController {
     return this.userService.registerByEmail(body.email, body.password, body.nickname);
   }
 
+  @Post('register/username')
+  async registerByUsername(@Body() body: { username: string; password: string; nickname?: string }) {
+    return this.userService.registerByUsername(body.username, body.password, body.nickname);
+  }
+
   @Post('login/phone')
   @HttpCode(HttpStatus.OK)
   async loginByPhone(@Body() body: { phone: string; code: string }) {
@@ -27,6 +32,12 @@ export class UserController {
   @HttpCode(HttpStatus.OK)
   async loginByEmail(@Body() body: { email: string; password: string }) {
     return this.userService.loginByEmail(body.email, body.password);
+  }
+
+  @Post('login/username')
+  @HttpCode(HttpStatus.OK)
+  async loginByUsername(@Body() body: { username: string; password: string }) {
+    return this.userService.loginByUsername(body.username, body.password);
   }
 
   @Post('login/wechat')
