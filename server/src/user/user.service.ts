@@ -5,6 +5,10 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import { User } from './user.entity';
+import { Tournament } from '../tournament/tournament.entity';
+import { Registration } from '../registration/registration.entity';
+import { Team, TeamMember } from '../team/team.entity';
+import { Notification } from '../notification/notification.entity';
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -12,6 +16,16 @@ export class UserService implements OnModuleInit {
     @InjectRepository(User)
     private userRepo: Repository<User>,
     private jwtService: JwtService,
+    @InjectRepository(Tournament)
+    private tournamentRepo: Repository<Tournament>,
+    @InjectRepository(Registration)
+    private regRepo: Repository<Registration>,
+    @InjectRepository(Team)
+    private teamRepo: Repository<Team>,
+    @InjectRepository(TeamMember)
+    private memberRepo: Repository<TeamMember>,
+    @InjectRepository(Notification)
+    private notifRepo: Repository<Notification>,
   ) {}
 
   async onModuleInit() {
@@ -171,6 +185,23 @@ export class UserService implements OnModuleInit {
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('用户不存在');
     if (user.role === 1) throw new ForbiddenException('不能删除管理员账号');
+
+    // Cascade delete all related data
+    // 1. Delete notifications
+    await this.notifRepo.delete({ user_id: userId });
+    // 2. Delete team memberships
+    await this.memberRepo.delete({ user_id: userId });
+    // 3. Delete teams where user is captain (and their members)
+    const captainTeams = await this.teamRepo.find({ where: { captain_id: userId } });
+    for (const team of captainTeams) {
+      await this.memberRepo.delete({ team_id: team.id });
+      await this.teamRepo.remove(team);
+    }
+    // 4. Delete registrations
+    await this.regRepo.delete({ user_id: userId });
+    // 5. Delete tournaments created by user
+    await this.tournamentRepo.delete({ creator_id: userId });
+    // 6. Delete user
     await this.userRepo.remove(user);
   }
 

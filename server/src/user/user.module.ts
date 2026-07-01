@@ -7,10 +7,15 @@ import { User } from './user.entity';
 import { UserService } from './user.service';
 import { UserController } from './user.controller';
 import { JwtStrategy } from './jwt.strategy';
+import { Tournament } from '../tournament/tournament.entity';
+import { Registration } from '../registration/registration.entity';
+import { Team } from '../team/team.entity';
+import { TeamMember } from '../team/team.entity';
+import { Notification } from '../notification/notification.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, Tournament, Registration, Team, TeamMember, Notification]),
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
