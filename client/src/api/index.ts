@@ -92,3 +92,19 @@ export const notificationApi = {
   markAsRead: (id: string) => api.post(`/notifications/${id}/read`),
   markAllAsRead: () => api.post('/notifications/read-all'),
 };
+
+export const announcementApi = {
+  list: (params?: { page?: number; limit?: number }) => api.get('/announcements', { params }),
+  get: (id: string) => api.get(`/announcements/${id}`),
+  adminList: (params?: { page?: number; limit?: number }) => api.get('/announcements/admin/all', { params }),
+  create: (data: { title: string; content: string; images?: string[]; is_pinned?: boolean; status?: string }) => api.post('/announcements', data),
+  update: (id: string, data: Partial<{ title: string; content: string; images: string[]; is_pinned: boolean; status: string }>) => api.put(`/announcements/${id}`, data),
+  delete: (id: string) => api.delete(`/announcements/${id}`),
+  uploadImages: (files: File[]) => {
+    const formData = new FormData();
+    files.forEach(f => formData.append('images', f));
+    return api.post('/announcements/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+};

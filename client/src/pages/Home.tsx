@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Row, Col, Tag, Typography, Input, Select, Space, Empty, Spin, Button, Modal, Form, message, Popconfirm, DatePicker, Radio, InputNumber } from 'antd';
-import { SearchOutlined, TrophyOutlined, UserOutlined, CalendarOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { tournamentApi } from '../api';
+import { Card, Row, Col, Tag, Typography, Input, Select, Space, Empty, Spin, Button, Modal, Form, message, Popconfirm, DatePicker, Radio, InputNumber, Image } from 'antd';
+import { SearchOutlined, TrophyOutlined, UserOutlined, CalendarOutlined, EditOutlined, DeleteOutlined, SoundOutlined, PushpinOutlined } from '@ant-design/icons';
+import { tournamentApi, announcementApi } from '../api';
 import { useAuthStore } from '../store';
 import dayjs from 'dayjs';
 
@@ -31,6 +31,7 @@ export function HomePage() {
   const [filter, setFilter] = useState({ game: '', status: '' });
   const [editModal, setEditModal] = useState<{ open: boolean; tournament: any }>({ open: false, tournament: null });
   const [editForm] = Form.useForm();
+  const [announcements, setAnnouncements] = useState<any[]>([]);
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
@@ -38,8 +39,16 @@ export function HomePage() {
 
   useEffect(() => {
     loadTournaments();
+    loadAnnouncements();
     if (token && !user) fetchUser();
   }, []);
+
+  const loadAnnouncements = async () => {
+    try {
+      const res = await announcementApi.list({ limit: 5 });
+      setAnnouncements(res.data.items || []);
+    } catch { /* ignore */ }
+  };
 
   const loadTournaments = async (params?: any) => {
     setLoading(true);
@@ -117,6 +126,39 @@ export function HomePage() {
         <Title level={2} style={{ marginBottom: 8 }}>🏆 电竞赛事广场</Title>
         <Text type="secondary">发现精彩赛事，参与竞技对决</Text>
       </div>
+
+      {announcements.length > 0 && (
+        <Card
+          style={{ marginBottom: 24, borderRadius: 12, background: 'linear-gradient(135deg, #f0f5ff 0%, #e6f4ff 100%)', border: '1px solid #d6e4ff' }}
+          bodyStyle={{ padding: '16px 20px' }}
+        >
+          <Space direction="vertical" size={12} style={{ width: '100%' }}>
+            <Space>
+              <SoundOutlined style={{ color: '#1677ff', fontSize: 16 }} />
+              <Text strong style={{ color: '#1677ff' }}>平台公告</Text>
+            </Space>
+            {announcements.map((a: any) => (
+              <div key={a.id} style={{ background: '#fff', padding: 12, borderRadius: 8, border: '1px solid #e8e8e8' }}>
+                <Space style={{ marginBottom: 4 }}>
+                  {a.is_pinned && <Tag color="orange" icon={<PushpinOutlined />}>置顶</Tag>}
+                  <Text strong>{a.title}</Text>
+                </Space>
+                <div style={{ color: '#666', whiteSpace: 'pre-wrap', fontSize: 13 }}>{a.content}</div>
+                {a.images?.length > 0 && (
+                  <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {a.images.map((url: string, i: number) => (
+                      <Image key={i} src={url} width={100} height={100} style={{ objectFit: 'cover', borderRadius: 4 }} />
+                    ))}
+                  </div>
+                )}
+                <Text type="secondary" style={{ fontSize: 12, marginTop: 8, display: 'block' }}>
+                  {a.author?.nickname || '管理员'} · {new Date(a.created_at).toLocaleString('zh-CN')}
+                </Text>
+              </div>
+            ))}
+          </Space>
+        </Card>
+      )}
 
       <div style={{ marginBottom: 24, display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
         <Input.Search
