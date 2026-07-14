@@ -1,9 +1,8 @@
 import { Outlet, useNavigate, Link } from 'react-router-dom';
-import { Layout, Menu, Button, Badge, Dropdown, Avatar } from 'antd';
+import { Layout, Button, Badge, Dropdown, Avatar } from 'antd';
 import { TrophyOutlined, PlusOutlined, UserOutlined, BellOutlined, TeamOutlined, LogoutOutlined, SettingOutlined } from '@ant-design/icons';
 import { useAuthStore } from '../store/auth';
 import { useEffect } from 'react';
-import { notificationApi } from '../api';
 
 const { Header, Content, Footer } = Layout;
 

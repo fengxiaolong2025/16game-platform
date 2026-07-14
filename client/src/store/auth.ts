@@ -8,6 +8,7 @@ interface User {
   phone?: string;
   email?: string;
   games?: string[];
+  game_ids?: string;
   role?: number;
   username?: string;
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, Tabs, Table, Button, Tag, Space, message, Modal, Popconfirm, Spin, Empty, DatePicker, Select, Form, InputNumber, Input } from 'antd';
-import { PlayCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined, EditOutlined, ForwardOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined, EditOutlined, ForwardOutlined } from '@ant-design/icons';
 import { tournamentApi, registrationApi, bracketApi, matchApi } from '../api';
 import dayjs from 'dayjs';
 
@@ -54,7 +54,7 @@ export function TournamentManagePage() {
       // Load rankings if tournament is completed
       if (tRes.data.status === 'completed') {
         try {
-          const rRes = await matchApi.list(id!);
+          await matchApi.list(id!);
           // Use rankings API
           const rankingRes = await fetch(`/api/tournaments/${id}/rankings`).then(r => r.json()).catch(() => []);
           setRankings(rankingRes || []);
@@ -264,7 +264,7 @@ export function TournamentManagePage() {
                     ),
                   }}
                   columns={[
-                    { title: '战队名称', dataIndex: 'team_name', render: (v: string, r: any) => <strong>{v}</strong> },
+                    { title: '战队名称', dataIndex: 'team_name', render: (v: string) => <strong>{v}</strong> },
                     { title: '标签', dataIndex: 'team_tag', render: (v: string) => v ? <Tag>{v}</Tag> : '-' },
                     { title: '人数', dataIndex: 'member_count', render: (v: number) => <Tag color="blue">{v}人</Tag> },
                     { title: '状态', dataIndex: 'status', render: (s: string) => {

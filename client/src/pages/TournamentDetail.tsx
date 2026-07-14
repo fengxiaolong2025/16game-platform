@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Card, Tabs, Tag, Button, Space, Descriptions, message, Modal, Table, Spin, Empty, Form, Input, Select } from 'antd';
 import { ShareAltOutlined, EditOutlined, UserAddOutlined } from '@ant-design/icons';
 import { tournamentApi, registrationApi, bracketApi, matchApi, rankingApi, teamApi } from '../api';

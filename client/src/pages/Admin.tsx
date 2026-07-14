@@ -59,7 +59,7 @@ function UserManagement() {
   };
 
   const columns = [
-    { title: '用户名', dataIndex: 'username', render: (v: string, r: any) => <strong>{v || '-'}</strong> },
+    { title: '用户名', dataIndex: 'username', render: (v: string) => <strong>{v || '-'}</strong> },
     { title: '昵称', dataIndex: 'nickname' },
     { title: '角色', dataIndex: 'role', render: (r: number) => r === 1 ? <Tag color="red">管理员</Tag> : <Tag>普通用户</Tag> },
     { title: '状态', dataIndex: 'status', render: (s: string) => s === 'banned' ? <Tag color="red">已禁用</Tag> : <Tag color="green">正常</Tag> },

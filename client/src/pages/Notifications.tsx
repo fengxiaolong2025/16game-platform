@@ -46,6 +46,7 @@ export function NotificationsPage() {
         <Empty description="暂无通知" />
       ) : (
         <List
+          loading={loading}
           dataSource={notifications}
           renderItem={(item) => (
             <Card

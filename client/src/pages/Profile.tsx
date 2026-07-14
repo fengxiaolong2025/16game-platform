@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Card, Form, Input, Button, Select, message, Divider, Tabs, Table, Tag } from 'antd';
+import { Card, Form, Input, Button, Select, message, Table, Tag } from 'antd';
 import { useAuthStore } from '../store';
 import { authApi, tournamentApi } from '../api';
 
