@@ -11,6 +11,9 @@ interface User {
   game_ids?: string;
   role?: number;
   username?: string;
+  bio?: string;
+  position?: string;
+  player_photos?: string[];
 }
 
 interface AuthState {
