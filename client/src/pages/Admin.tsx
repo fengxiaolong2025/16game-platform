@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Table, Button, Tag, Space, message, Modal, Input, Popconfirm, Card, Tabs, Form, Switch, Upload, Image } from 'antd';
 import { DeleteOutlined, KeyOutlined, ReloadOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
-import { authApi, announcementApi } from '../api';
+import { authApi, announcementApi, honorRollApi } from '../api';
 
 // ========== User Management ==========
 function UserManagement() {
@@ -275,6 +275,189 @@ function AnnouncementManagement() {
   );
 }
 
+// ========== Honor Roll Management ==========
+function HonorRollManagement() {
+  const [records, setRecords] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editModal, setEditModal] = useState<{ open: boolean; data: any }>({ open: false, data: null });
+  const [form] = Form.useForm();
+  const [uploading, setUploading] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState('');
+
+  useEffect(() => { loadRecords(); }, []);
+
+  const loadRecords = async () => {
+    setLoading(true);
+    try {
+      const res = await honorRollApi.adminList();
+      setRecords(res.data || []);
+    } catch (err: any) {
+      message.error(err.response?.data?.message || '加载失败');
+    } finally { setLoading(false); }
+  };
+
+  const openCreate = () => {
+    form.resetFields();
+    setPhotoUrl('');
+    setEditModal({ open: true, data: null });
+  };
+
+  const openEdit = (record: any) => {
+    form.setFieldsValue({
+      title: record.title,
+      description: record.description,
+      tournament_name: record.tournament_name,
+      game: record.game,
+      award_type: record.award_type,
+      winner_name: record.winner_name,
+      team_name: record.team_name,
+      award_date: record.award_date,
+      sort_order: record.sort_order,
+    });
+    setPhotoUrl(record.photo || '');
+    setEditModal({ open: true, data: record });
+  };
+
+  const handleSave = async () => {
+    try {
+      const values = await form.validateFields();
+      const data = { ...values, photo: photoUrl || undefined };
+      if (editModal.data) {
+        await honorRollApi.update(editModal.data.id, data);
+        message.success('已更新');
+      } else {
+        await honorRollApi.create(data);
+        message.success('已添加');
+      }
+      setEditModal({ open: false, data: null });
+      setPhotoUrl('');
+      loadRecords();
+    } catch (err: any) {
+      if (err?.errorFields) return;
+      message.error(err.response?.data?.message || '操作失败');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await honorRollApi.delete(id);
+      message.success('已删除');
+      loadRecords();
+    } catch (err: any) {
+      message.error(err.response?.data?.message || '删除失败');
+    }
+  };
+
+  const handleUpload = async (file: any) => {
+    setUploading(true);
+    try {
+      const res = await honorRollApi.uploadImage(file);
+      setPhotoUrl(res.data.url);
+      message.success('上传成功');
+    } catch (err: any) {
+      message.error(err.response?.data?.message || '上传失败');
+    } finally { setUploading(false); }
+    return false;
+  };
+
+  const awardTypeOptions = [
+    { label: '冠军', value: 'champion' },
+    { label: '亚军', value: 'runner_up' },
+    { label: '季军', value: 'third_place' },
+    { label: 'MVP', value: 'mvp' },
+    { label: '最佳战队', value: 'best_team' },
+  ];
+
+  const columns = [
+    { title: '奖项', dataIndex: 'award_type', render: (v: string) => {
+      const m: Record<string, { label: string; color: string }> = { champion: { label: '冠军', color: 'gold' }, runner_up: { label: '亚军', color: 'default' }, third_place: { label: '季军', color: 'orange' }, mvp: { label: 'MVP', color: 'red' }, best_team: { label: '最佳战队', color: 'blue' } };
+      return <Tag color={m[v]?.color || 'default'}>{m[v]?.label || v}</Tag>;
+    }},
+    { title: '获奖者', dataIndex: 'winner_name' },
+    { title: '战队', dataIndex: 'team_name', render: (v: string) => v || '-' },
+    { title: '赛事', dataIndex: 'tournament_name', render: (v: string) => v || '-' },
+    { title: '游戏', dataIndex: 'game', render: (v: string) => v || '-' },
+    { title: '日期', dataIndex: 'award_date', render: (v: string) => v || '-' },
+    { title: '操作', render: (_: any, r: any) => (
+      <Space>
+        <Button size="small" type="primary" onClick={() => openEdit(r)}>编辑</Button>
+        <Popconfirm title="确定删除？" onConfirm={() => handleDelete(r.id)}>
+          <Button size="small" danger icon={<DeleteOutlined />}>删除</Button>
+        </Popconfirm>
+      </Space>
+    )},
+  ];
+
+  return (
+    <Card style={{ borderRadius: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <h2 style={{ margin: 0 }}>光荣榜管理（共 {records.length} 条）</h2>
+        <Space>
+          <Button icon={<ReloadOutlined />} onClick={loadRecords}>刷新</Button>
+          <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>添加荣誉</Button>
+        </Space>
+      </div>
+      <Table dataSource={records} columns={columns} rowKey="id" loading={loading} pagination={{ pageSize: 10 }} size="small" />
+
+      <Modal
+        title={editModal.data ? '编辑荣誉' : '添加荣誉'}
+        open={editModal.open}
+        onOk={handleSave}
+        onCancel={() => { setEditModal({ open: false, data: null }); setPhotoUrl(''); }}
+        okText={editModal.data ? '保存' : '添加'}
+        cancelText="取消"
+        width={600}
+      >
+        <Form form={form} layout="vertical">
+          <Form.Item name="title" label="荣誉标题" rules={[{ required: true, message: '请输入标题' }]}>
+            <Input placeholder="如：2026春季赛英雄联盟冠军" />
+          </Form.Item>
+          <Form.Item name="award_type" label="奖项类型" rules={[{ required: true, message: '请选择奖项类型' }]}>
+            <Space wrap>
+              {awardTypeOptions.map(opt => (
+                <Tag.CheckableTag key={opt.value} checked={Form.useWatch('award_type', form) === opt.value} onChange={() => form.setFieldsValue({ award_type: opt.value })}>
+                  {opt.label}
+                </Tag.CheckableTag>
+              ))}
+            </Space>
+          </Form.Item>
+          <Form.Item name="winner_name" label="获奖者名称" rules={[{ required: true, message: '请输入获奖者名称' }]}>
+            <Input placeholder="选手名或战队名" />
+          </Form.Item>
+          <Form.Item name="team_name" label="所属战队">
+            <Input placeholder="可选" />
+          </Form.Item>
+          <Form.Item name="tournament_name" label="所属赛事">
+            <Input placeholder="可选" />
+          </Form.Item>
+          <Form.Item name="game" label="游戏项目">
+            <Input placeholder="如：英雄联盟" />
+          </Form.Item>
+          <Form.Item name="award_date" label="获奖日期">
+            <Input placeholder="如：2026-03" />
+          </Form.Item>
+          <Form.Item name="description" label="描述">
+            <Input.TextArea rows={3} placeholder="可选描述" />
+          </Form.Item>
+          <Form.Item name="sort_order" label="排序">
+            <Input type="number" placeholder="数字越小越靠前" />
+          </Form.Item>
+          <Form.Item label="照片">
+            {photoUrl && (
+              <div style={{ marginBottom: 8 }}>
+                <img src={photoUrl} alt="photo" style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 4 }} />
+              </div>
+            )}
+            <Upload beforeUpload={handleUpload} showUploadList={false} accept="image/*">
+              <Button icon={<UploadOutlined />} loading={uploading}>上传照片</Button>
+            </Upload>
+          </Form.Item>
+        </Form>
+      </Modal>
+    </Card>
+  );
+}
+
 // ========== Admin Page ==========
 export function AdminPage() {
   return (
@@ -284,6 +467,7 @@ export function AdminPage() {
         items={[
           { key: 'users', label: '用户管理', children: <UserManagement /> },
           { key: 'announcements', label: '公告管理', children: <AnnouncementManagement /> },
+          { key: 'honor', label: '光荣榜管理', children: <HonorRollManagement /> },
         ]}
       />
     </div>

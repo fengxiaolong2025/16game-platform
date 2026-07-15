@@ -78,12 +78,20 @@ export const teamApi = {
   join: (code: string) => api.post('/teams/join', { code }),
   joinById: (teamId: string) => api.post(`/teams/${teamId}/join`),
   allTeams: () => api.get('/teams/all'),
+  showcase: () => api.get('/teams/showcase'),
   reviewMember: (teamId: string, memberId: string, action: string) =>
     api.post(`/teams/${teamId}/members/${memberId}/review`, { action }),
   removeMember: (teamId: string, memberId: string) => api.delete(`/teams/${teamId}/members/${memberId}`),
   leaveTeam: (teamId: string) => api.post(`/teams/${teamId}/leave`),
   disbandTeam: (teamId: string) => api.delete(`/teams/${teamId}/disband`),
   myCaptainTeams: () => api.get('/teams/captain/my'),
+  uploadPhotos: (files: File[]) => {
+    const formData = new FormData();
+    files.forEach(f => formData.append('images', f));
+    return api.post('/teams/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 };
 
 export const notificationApi = {
@@ -91,6 +99,32 @@ export const notificationApi = {
   unreadCount: () => api.get('/notifications/unread-count'),
   markAsRead: (id: string) => api.post(`/notifications/${id}/read`),
   markAllAsRead: () => api.post('/notifications/read-all'),
+};
+
+export const playerApi = {
+  list: () => api.get('/users/players'),
+  uploadPhotos: (files: File[]) => {
+    const formData = new FormData();
+    files.forEach(f => formData.append('images', f));
+    return api.post('/users/me/photos', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+};
+
+export const honorRollApi = {
+  list: () => api.get('/honor-rolls'),
+  adminList: () => api.get('/honor-rolls/admin/all'),
+  create: (data: any) => api.post('/honor-rolls', data),
+  update: (id: string, data: any) => api.put(`/honor-rolls/${id}`, data),
+  delete: (id: string) => api.delete(`/honor-rolls/${id}`),
+  uploadImage: (file: File) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    return api.post('/honor-rolls/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 };
 
 export const announcementApi = {

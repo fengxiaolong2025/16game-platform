@@ -1,6 +1,6 @@
 import { Outlet, useNavigate, Link } from 'react-router-dom';
 import { Layout, Button, Badge, Dropdown, Avatar } from 'antd';
-import { TrophyOutlined, PlusOutlined, UserOutlined, BellOutlined, TeamOutlined, LogoutOutlined, SettingOutlined } from '@ant-design/icons';
+import { TrophyOutlined, PlusOutlined, UserOutlined, BellOutlined, TeamOutlined, LogoutOutlined, SettingOutlined, CrownOutlined } from '@ant-design/icons';
 import { useAuthStore } from '../store/auth';
 import { useEffect } from 'react';
 
@@ -39,6 +39,11 @@ export function AppLayout() {
             <TrophyOutlined style={{ fontSize: 24, color: '#1677ff' }} />
             <span style={{ fontSize: 18, fontWeight: 700, color: '#1677ff' }}>电竞赛事平台</span>
           </Link>
+          <nav style={{ display: 'flex', gap: 16 }}>
+            <Link to="/teams-showcase" style={{ textDecoration: 'none', color: '#333' }}><TeamOutlined /> 战队展示</Link>
+            <Link to="/players-showcase" style={{ textDecoration: 'none', color: '#333' }}><UserOutlined /> 选手展示</Link>
+            <Link to="/honor-roll" style={{ textDecoration: 'none', color: '#333' }}><CrownOutlined /> 光荣榜</Link>
+          </nav>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           {token ? (

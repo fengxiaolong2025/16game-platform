@@ -221,4 +221,12 @@ export class UserService implements OnModuleInit {
     user.status = status;
     await this.userRepo.save(user);
   }
+
+  async findFeaturedPlayers(): Promise<User[]> {
+    return this.userRepo.find({
+      where: { status: 'active' },
+      order: { created_at: 'DESC' },
+      take: 50,
+    });
+  }
 }

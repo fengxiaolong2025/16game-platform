@@ -11,6 +11,9 @@ import { TournamentManagePage } from './pages/TournamentManage';
 import { TeamPage } from './pages/Team';
 import { NotificationsPage } from './pages/Notifications';
 import { AdminPage } from './pages/Admin';
+import { TeamsShowcasePage } from './pages/TeamsShowcase';
+import { PlayersShowcasePage } from './pages/PlayersShowcase';
+import { HonorRollPage } from './pages/HonorRoll';
 import { AppLayout } from './components/AppLayout';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -35,6 +38,9 @@ export default function App() {
               <Route path="teams" element={<ProtectedRoute><TeamPage /></ProtectedRoute>} />
               <Route path="notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
               <Route path="admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
+              <Route path="teams-showcase" element={<TeamsShowcasePage />} />
+              <Route path="players-showcase" element={<PlayersShowcasePage />} />
+              <Route path="honor-roll" element={<HonorRollPage />} />
             </Route>
           </Routes>
         </BrowserRouter>

@@ -10,6 +10,7 @@ import { TeamModule } from './team/team.module';
 import { NotificationModule } from './notification/notification.module';
 import { RankingModule } from './ranking/ranking.module';
 import { AnnouncementModule } from './announcement/announcement.module';
+import { HonorRollModule } from './honor-roll/honor-roll.module';
 import { join } from 'path';
 
 @Module({
@@ -42,6 +43,7 @@ import { join } from 'path';
     NotificationModule,
     RankingModule,
     AnnouncementModule,
+    HonorRollModule,
   ],
 })
 export class AppModule {}

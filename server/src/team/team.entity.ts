@@ -28,6 +28,15 @@ export class Team {
   @Column({ nullable: true })
   description: string;
 
+  @Column({ type: 'simple-json', nullable: true, name: 'photos' })
+  photos: string[];
+
+  @Column({ nullable: true, name: 'achievement' })
+  achievement: string;
+
+  @Column({ default: false, name: 'is_featured' })
+  is_featured: boolean;
+
   @CreateDateColumn({ name: 'created_at' })
   created_at: Date;
 

@@ -1,6 +1,23 @@
-import { Controller, Post, Get, Put, Delete, Body, Param, UseGuards, Request, HttpCode, HttpStatus, ForbiddenException } from '@nestjs/common';
+import { Controller, Post, Get, Put, Delete, Body, Param, UseGuards, Request, HttpCode, HttpStatus, ForbiddenException, BadRequestException, UseInterceptors, UploadedFiles } from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname, join } from 'path';
+import { existsSync, mkdirSync } from 'fs';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
+
+const PLAYER_UPLOAD_DIR = join(__dirname, '..', '..', 'uploads', 'players');
+
+const playerStorage = diskStorage({
+  destination: (_req, _file, cb) => {
+    if (!existsSync(PLAYER_UPLOAD_DIR)) mkdirSync(PLAYER_UPLOAD_DIR, { recursive: true });
+    cb(null, PLAYER_UPLOAD_DIR);
+  },
+  filename: (_req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + extname(file.originalname));
+  },
+});
 
 @Controller('api/users')
 export class UserController {
@@ -105,6 +122,27 @@ export class UserController {
     if (!isAdmin) throw new ForbiddenException('仅管理员可操作');
     await this.userService.updateUserStatus(id, body.status, req.user.id);
     return { message: '状态已更新' };
+  }
+
+  // Public: list featured players
+  @Get('players')
+  async listPlayers() {
+    return this.userService.findFeaturedPlayers();
+  }
+
+  // Upload player photos
+  @Post('me/photos')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FilesInterceptor('images', 6, { storage: playerStorage, limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: (_req, file, cb) => {
+    if (!file.mimetype.match(/^image\/(jpeg|png|gif|webp)$/)) {
+      return cb(new BadRequestException('仅支持 jpg/png/gif/webp 格式'), false);
+    }
+    cb(null, true);
+  }}))
+  async uploadPlayerPhotos(@Request() req, @UploadedFiles() files: Express.Multer.File[]) {
+    if (!files || files.length === 0) throw new BadRequestException('请选择图片');
+    const urls = files.map(f => `/uploads/players/${f.filename}`);
+    return { urls };
   }
 
   @Get(':id')

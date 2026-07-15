@@ -46,4 +46,13 @@ export class User {
 
   @Column({ nullable: true, name: 'last_login_at' })
   last_login_at: Date;
+
+  @Column({ nullable: true, type: 'text', name: 'bio' })
+  bio: string;
+
+  @Column({ nullable: true, name: 'position' })
+  position: string;
+
+  @Column({ type: 'simple-json', nullable: true, name: 'player_photos' })
+  player_photos: string[];
 }

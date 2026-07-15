@@ -169,6 +169,14 @@ export class TeamService {
     return this.teamRepo.find({ order: { created_at: 'DESC' }, take: 100 });
   }
 
+  async findFeatured(): Promise<Team[]> {
+    return this.teamRepo.find({
+      order: { is_featured: 'DESC', created_at: 'DESC' },
+      take: 50,
+      relations: { captain: true },
+    });
+  }
+
   async findByIdSilent(id: string): Promise<Team | null> {
     return this.teamRepo.findOne({ where: { id } });
   }
