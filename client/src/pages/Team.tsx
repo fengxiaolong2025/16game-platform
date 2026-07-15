@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Card, Button, Table, Tag, Modal, Form, Input, message, Space, Popconfirm, Tabs } from 'antd';
-import { PlusOutlined, CopyOutlined, UserAddOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Card, Button, Table, Tag, Modal, Form, Input, message, Space, Popconfirm, Tabs, Upload, Image } from 'antd';
+import { PlusOutlined, CopyOutlined, UserAddOutlined, DeleteOutlined, EditOutlined, UploadOutlined } from '@ant-design/icons';
 import { teamApi } from '../api';
 import { useAuthStore } from '../store';
 
@@ -9,10 +9,15 @@ export function TeamPage() {
   const [selectedTeam, setSelectedTeam] = useState<any>(null);
   const [members, setMembers] = useState<any[]>([]);
   const [createModal, setCreateModal] = useState(false);
+  const [editModal, setEditModal] = useState<{ open: boolean; team: any }>({ open: false, team: null });
   const [joinModal, setJoinModal] = useState(false);
   const [allTeams, setAllTeams] = useState<any[]>([]);
   const [inviteCode, setInviteCode] = useState('');
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [createForm] = Form.useForm();
+  const [editForm] = Form.useForm();
   const user = useAuthStore((s) => s.user);
 
   useEffect(() => { loadTeams(); }, []);
@@ -31,14 +36,59 @@ export function TeamPage() {
     } catch { /* ignore */ }
   };
 
+  const handleUploadPhoto = async (file: any) => {
+    if (photos.length >= 6) {
+      message.warning('最多上传6张照片');
+      return false;
+    }
+    setUploading(true);
+    try {
+      const res = await teamApi.uploadPhotos([file]);
+      setPhotos([...photos, ...(res.data.urls || [])]);
+      message.success('上传成功');
+    } catch (err: any) {
+      message.error(err.response?.data?.message || '上传失败');
+    } finally { setUploading(false); }
+    return false;
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotos(photos.filter((_, i) => i !== index));
+  };
+
   const handleCreate = async (values: any) => {
     setLoading(true);
     try {
-      await teamApi.create(values);
+      await teamApi.create({ ...values, photos });
       message.success('战队创建成功');
       setCreateModal(false);
+      setPhotos([]);
+      createForm.resetFields();
       loadTeams();
     } catch (err: any) { message.error(err.response?.data?.message || '创建失败'); }
+    finally { setLoading(false); }
+  };
+
+  const openEditModal = (team: any) => {
+    editForm.setFieldsValue({
+      name: team.name,
+      tag: team.tag,
+      description: team.description,
+      achievement: team.achievement,
+    });
+    setPhotos(team.photos || []);
+    setEditModal({ open: true, team });
+  };
+
+  const handleEdit = async (values: any) => {
+    setLoading(true);
+    try {
+      await teamApi.update(editModal.team.id, { ...values, photos });
+      message.success('战队信息已更新');
+      setEditModal({ open: false, team: null });
+      setPhotos([]);
+      loadTeams();
+    } catch (err: any) { message.error(err.response?.data?.message || '更新失败'); }
     finally { setLoading(false); }
   };
 
@@ -131,20 +181,45 @@ export function TeamPage() {
     } },
   ];
 
+  // Shared photo upload section
+  const PhotoUploadSection = () => (
+    <Form.Item label="战队照片（最多6张）">
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+        {photos.map((url, index) => (
+          <div key={index} style={{ position: 'relative' }}>
+            <Image src={url} width={100} height={100} style={{ objectFit: 'cover', borderRadius: 8 }} />
+            <Button
+              size="small"
+              danger
+              icon={<DeleteOutlined />}
+              style={{ position: 'absolute', top: -8, right: -8, minWidth: 20, height: 20, padding: 0, borderRadius: '50%' }}
+              onClick={() => removePhoto(index)}
+            />
+          </div>
+        ))}
+      </div>
+      {photos.length < 6 && (
+        <Upload beforeUpload={handleUploadPhoto} showUploadList={false} accept="image/*">
+          <Button icon={<UploadOutlined />} loading={uploading}>上传照片</Button>
+        </Upload>
+      )}
+    </Form.Item>
+  );
+
   return (
     <div style={{ maxWidth: 800, margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <h2>我的战队</h2>
         <Space>
           <Button icon={<UserAddOutlined />} onClick={openJoinModal}>加入战队</Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateModal(true)}>创建战队</Button>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => { setPhotos([]); setCreateModal(true); }}>创建战队</Button>
         </Space>
       </div>
 
       {teams.length === 0 ? (
         <Card style={{ borderRadius: 12, textAlign: 'center', padding: 40 }}>
           <p style={{ color: '#999' }}>还没有加入任何战队</p>
-          <Button type="primary" onClick={() => setCreateModal(true)}>创建第一个战队</Button>
+          <Button type="primary" onClick={() => { setPhotos([]); setCreateModal(true); }}>创建第一个战队</Button>
         </Card>
       ) : (
         teams.map((team) => (
@@ -154,8 +229,12 @@ export function TeamPage() {
                 <strong style={{ fontSize: 16 }}>{team.name}</strong>
                 {team.tag && <Tag style={{ marginLeft: 8 }}>{team.tag}</Tag>}
                 <span style={{ color: '#999', marginLeft: 8 }}>{team.member_count} 名成员</span>
+                {team.achievement && <Tag color="orange" style={{ marginLeft: 8 }}>{team.achievement}</Tag>}
               </div>
               <Space>
+                {team.captain_id === user?.id && (
+                  <Button size="small" icon={<EditOutlined />} onClick={() => openEditModal(team)}>编辑</Button>
+                )}
                 <Button size="small" icon={<CopyOutlined />} onClick={() => handleInvite(team.id)}>邀请</Button>
                 <Button size="small" onClick={() => { setSelectedTeam(team); loadMembers(team.id); }}>管理成员</Button>
                 {team.captain_id === user?.id ? (
@@ -185,8 +264,8 @@ export function TeamPage() {
         </Modal>
       )}
 
-      <Modal title="创建战队" open={createModal} onCancel={() => setCreateModal(false)} footer={null}>
-        <Form onFinish={handleCreate} layout="vertical">
+      <Modal title="创建战队" open={createModal} onCancel={() => { setCreateModal(false); setPhotos([]); }} footer={null} width={560}>
+        <Form form={createForm} onFinish={handleCreate} layout="vertical">
           <Form.Item name="name" label="战队名称" rules={[{ required: true, max: 50 }]}>
             <Input placeholder="给你的战队起个名字" />
           </Form.Item>
@@ -196,7 +275,30 @@ export function TeamPage() {
           <Form.Item name="description" label="战队简介">
             <Input.TextArea rows={3} placeholder="介绍一下你的战队" />
           </Form.Item>
+          <Form.Item name="achievement" label="战队成就">
+            <Input placeholder="如：2026春季赛冠军" />
+          </Form.Item>
+          <PhotoUploadSection />
           <Button type="primary" htmlType="submit" loading={loading} block>创建</Button>
+        </Form>
+      </Modal>
+
+      <Modal title="编辑战队" open={editModal.open} onCancel={() => { setEditModal({ open: false, team: null }); setPhotos([]); }} footer={null} width={560}>
+        <Form form={editForm} onFinish={handleEdit} layout="vertical">
+          <Form.Item name="name" label="战队名称" rules={[{ required: true, max: 50 }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="tag" label="战队标签" rules={[{ max: 20 }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="description" label="战队简介">
+            <Input.TextArea rows={3} />
+          </Form.Item>
+          <Form.Item name="achievement" label="战队成就">
+            <Input placeholder="如：2026春季赛冠军" />
+          </Form.Item>
+          <PhotoUploadSection />
+          <Button type="primary" htmlType="submit" loading={loading} block>保存</Button>
         </Form>
       </Modal>
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Card, Row, Col, Tag, Typography, Empty, Spin, Avatar, Space, Modal, Image, Descriptions } from 'antd';
-import { TeamOutlined, UserOutlined, CrownOutlined, PictureOutlined } from '@ant-design/icons';
+import { Card, Row, Col, Tag, Typography, Empty, Spin, Modal, Image, Descriptions } from 'antd';
+import { TeamOutlined, UserOutlined } from '@ant-design/icons';
 import { teamApi } from '../api';
 
 const { Title, Text, Paragraph } = Typography;
@@ -38,49 +38,71 @@ export function TeamsShowcasePage() {
             <Col xs={24} sm={12} lg={8} key={team.id}>
               <Card
                 hoverable
-                style={{ borderRadius: 12, overflow: 'hidden', height: '100%' }}
-                cover={
-                  <div style={{
-                    height: 160,
-                    background: team.logo
-                      ? `url(${team.logo}) center/cover`
-                      : 'linear-gradient(135deg, #1677ff22, #1677ff44)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center'
-                  }}>
-                    {!team.logo && <TeamOutlined style={{ fontSize: 50, color: '#1677ff' }} />}
-                  </div>
-                }
+                style={{ borderRadius: 12, overflow: 'hidden', height: '100%', padding: 0 }}
+                bodyStyle={{ padding: 0 }}
                 onClick={() => setDetailModal({ open: true, team })}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                  <Space>
-                    <Avatar size={40} icon={<TeamOutlined />} src={team.logo} style={{ backgroundColor: '#1677ff' }} />
-                    <div>
-                      <Text strong style={{ fontSize: 16 }}>{team.name}</Text>
-                      {team.tag && <Tag color="blue" style={{ marginLeft: 8 }}>{team.tag}</Tag>}
-                    </div>
-                  </Space>
-                  {team.is_featured && <Tag color="gold">精选</Tag>}
-                </div>
-
-                {team.description && (
-                  <Paragraph ellipsis={{ rows: 2 }} type="secondary" style={{ marginBottom: 12 }}>
-                    {team.description}
-                  </Paragraph>
-                )}
-
-                <Space direction="vertical" size={4} style={{ width: '100%' }}>
-                  <Text type="secondary"><UserOutlined /> {team.member_count || 0} 名成员</Text>
-                  <Text type="secondary"><CrownOutlined /> 队长: {team.captain?.nickname || '未知'}</Text>
-                  {team.achievement && <Tag color="orange">{team.achievement}</Tag>}
-                </Space>
-
-                {team.photos?.length > 0 && (
-                  <div style={{ marginTop: 12, display: 'flex', gap: 4 }}>
-                    <PictureOutlined style={{ color: '#999' }} />
-                    <Text type="secondary">{team.photos.length} 张照片</Text>
+                {/* 照片区域 - 主要展示 */}
+                {team.photos?.length > 0 ? (
+                  <div style={{ width: '100%', height: 220, overflow: 'hidden', position: 'relative' }}>
+                    <Image
+                      src={team.photos[0]}
+                      width="100%"
+                      height={220}
+                      style={{ objectFit: 'cover', display: 'block' }}
+                      preview={false}
+                    />
+                    {team.photos.length > 1 && (
+                      <div style={{
+                        position: 'absolute', bottom: 8, right: 8,
+                        background: 'rgba(0,0,0,0.6)', color: '#fff',
+                        padding: '2px 8px', borderRadius: 10, fontSize: 12,
+                      }}>
+                        +{team.photos.length - 1}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{
+                    width: '100%', height: 220,
+                    background: 'linear-gradient(135deg, #1677ff22, #1677ff44)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <TeamOutlined style={{ fontSize: 60, color: '#1677ff' }} />
                   </div>
                 )}
+
+                {/* 文字信息区域 */}
+                <div style={{ padding: '12px 16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    <Text strong style={{ fontSize: 16 }}>{team.name}</Text>
+                    {team.tag && <Tag color="blue">{team.tag}</Tag>}
+                    {team.is_featured && <Tag color="gold">精选</Tag>}
+                  </div>
+
+                  <div style={{ marginBottom: 6 }}>
+                    <Text type="secondary" style={{ fontSize: 13 }}>
+                      <UserOutlined /> {team.member_count || 0} 名成员
+                    </Text>
+                    {team.captain?.nickname && (
+                      <Text type="secondary" style={{ fontSize: 13, marginLeft: 12 }}>
+                        队长: {team.captain.nickname}
+                      </Text>
+                    )}
+                  </div>
+
+                  {team.achievement && (
+                    <div style={{ marginBottom: 6 }}>
+                      <Tag color="orange">{team.achievement}</Tag>
+                    </div>
+                  )}
+
+                  {team.description && (
+                    <Paragraph ellipsis={{ rows: 2 }} type="secondary" style={{ marginBottom: 0, fontSize: 13 }}>
+                      {team.description}
+                    </Paragraph>
+                  )}
+                </div>
               </Card>
             </Col>
           ))}
