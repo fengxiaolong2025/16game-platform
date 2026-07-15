@@ -21,6 +21,7 @@ export function ProfilePage() {
         game_ids: user.game_ids || '',
         bio: user.bio || '',
         position: user.position || '',
+        ladder_score: user.ladder_score || '',
       });
       setPhotos(user.player_photos || []);
     }
@@ -118,6 +119,9 @@ export function ProfilePage() {
           </Form.Item>
           <Form.Item name="game_ids" label="游戏内ID">
             <Input placeholder="你的游戏内ID（可选）" />
+          </Form.Item>
+          <Form.Item name="ladder_score" label="16天梯分数">
+            <Input type="number" placeholder="输入你的16天梯分数" />
           </Form.Item>
 
           <Form.Item label="个人照片（最多6张）">

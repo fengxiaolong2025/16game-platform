@@ -85,6 +85,12 @@ export function PlayersShowcasePage() {
                     </Text>
                   )}
 
+                  {player.ladder_score != null && player.ladder_score > 0 && (
+                    <div style={{ marginBottom: 6 }}>
+                      <Tag color="volcano">16天梯: {player.ladder_score} 分</Tag>
+                    </div>
+                  )}
+
                   {player.bio && (
                     <Paragraph ellipsis={{ rows: 2 }} type="secondary" style={{ marginBottom: 8, fontSize: 13 }}>
                       {player.bio}
@@ -119,6 +125,9 @@ export function PlayersShowcasePage() {
 
             <Descriptions column={1} size="small" style={{ marginBottom: 16 }}>
               {detailModal.player.game_ids && <Descriptions.Item label="游戏ID">{detailModal.player.game_ids}</Descriptions.Item>}
+              {detailModal.player.ladder_score != null && detailModal.player.ladder_score > 0 && (
+                <Descriptions.Item label="16天梯分数">{detailModal.player.ladder_score} 分</Descriptions.Item>
+              )}
               {detailModal.player.games?.length > 0 && (
                 <Descriptions.Item label="常玩游戏">{detailModal.player.games.join('、')}</Descriptions.Item>
               )}

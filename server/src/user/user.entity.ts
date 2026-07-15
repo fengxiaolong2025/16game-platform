@@ -55,4 +55,7 @@ export class User {
 
   @Column({ type: 'simple-json', nullable: true, name: 'player_photos' })
   player_photos: string[];
+
+  @Column({ nullable: true, name: 'ladder_score' })
+  ladder_score: number;
 }

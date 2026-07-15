@@ -14,6 +14,7 @@ interface User {
   bio?: string;
   position?: string;
   player_photos?: string[];
+  ladder_score?: number;
 }
 
 interface AuthState {
