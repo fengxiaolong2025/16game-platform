@@ -37,7 +37,9 @@ export function ProfilePage() {
   const handleUpdateProfile = async (values: any) => {
     setLoading(true);
     try {
-      const data = { ...values, player_photos: photos };
+      // Convert empty strings to null for numeric fields
+      const ladder_score = values.ladder_score === '' || values.ladder_score === undefined ? null : Number(values.ladder_score);
+      const data = { ...values, ladder_score, player_photos: photos };
       const res = await authApi.updateProfile(data);
       setUser(res.data);
       message.success('信息已更新');

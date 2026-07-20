@@ -79,6 +79,7 @@ export const teamApi = {
   joinById: (teamId: string) => api.post(`/teams/${teamId}/join`),
   allTeams: () => api.get('/teams/all'),
   showcase: () => api.get('/teams/showcase'),
+  export: () => api.get('/teams/export'),
   reviewMember: (teamId: string, memberId: string, action: string) =>
     api.post(`/teams/${teamId}/members/${memberId}/review`, { action }),
   removeMember: (teamId: string, memberId: string) => api.delete(`/teams/${teamId}/members/${memberId}`),

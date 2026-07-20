@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException, NotFoundException, ForbiddenException, OnModuleInit } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, NotFoundException, ForbiddenException, BadRequestException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
@@ -206,6 +206,9 @@ export class UserService implements OnModuleInit {
   }
 
   async resetUserPassword(userId: string, newPassword: string, adminId: string): Promise<void> {
+    if (!userId || userId === 'NaN' || userId === 'undefined') {
+      throw new BadRequestException('无效的用户ID');
+    }
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('用户不存在');
     if (user.role === 1 && userId !== adminId) throw new ForbiddenException('不能修改其他管理员的密码');

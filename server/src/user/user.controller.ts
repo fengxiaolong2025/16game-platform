@@ -111,6 +111,9 @@ export class UserController {
   async resetPassword(@Param('id') id: string, @Request() req, @Body() body: { password: string }) {
     const isAdmin = await this.userService.isAdmin(req.user.id);
     if (!isAdmin) throw new ForbiddenException('仅管理员可操作');
+    if (!id || id === 'NaN' || id === 'undefined') {
+      throw new BadRequestException('无效的用户ID');
+    }
     await this.userService.resetUserPassword(id, body.password, req.user.id);
     return { message: '密码已重置' };
   }

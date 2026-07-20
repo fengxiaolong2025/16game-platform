@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Card, Row, Col, Tag, Typography, Empty, Spin, Modal, Image, Descriptions } from 'antd';
-import { TeamOutlined, UserOutlined } from '@ant-design/icons';
+import { Card, Row, Col, Tag, Typography, Empty, Spin, Modal, Image, Descriptions, List } from 'antd';
+import { TeamOutlined, UserOutlined, CrownOutlined } from '@ant-design/icons';
 import { teamApi } from '../api';
 
 const { Title, Text, Paragraph } = Typography;
@@ -33,7 +33,7 @@ export function TeamsShowcasePage() {
       ) : teams.length === 0 ? (
         <Empty description="暂无战队展示" />
       ) : (
-        <Row gutter={[20, 20]}>
+        <Row gutter={[20, 20]} className="showcase-grid">
           {teams.map((team) => (
             <Col xs={24} sm={12} lg={8} key={team.id}>
               <Card
@@ -42,21 +42,31 @@ export function TeamsShowcasePage() {
                 bodyStyle={{ padding: 0 }}
                 onClick={() => setDetailModal({ open: true, team })}
               >
-                {/* 照片区域 - 主要展示 */}
+                {/* 照片区域 - 固定比例，裁剪底部 */}
                 {team.photos?.length > 0 ? (
-                  <div style={{ width: '100%', height: 220, overflow: 'hidden', position: 'relative' }}>
-                    <Image
+                  <div style={{
+                    width: '100%',
+                    aspectRatio: '4 / 3',
+                    overflow: 'hidden',
+                    position: 'relative',
+                    background: '#f0f0f0',
+                  }}>
+                    <img
                       src={team.photos[0]}
-                      width="100%"
-                      height={220}
-                      style={{ objectFit: 'cover', display: 'block' }}
-                      preview={false}
+                      alt={team.name}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        objectPosition: 'top center',
+                        display: 'block',
+                      }}
                     />
                     {team.photos.length > 1 && (
                       <div style={{
                         position: 'absolute', bottom: 8, right: 8,
                         background: 'rgba(0,0,0,0.6)', color: '#fff',
-                        padding: '2px 8px', borderRadius: 10, fontSize: 12,
+                        padding: '2px 10px', borderRadius: 12, fontSize: 12,
                       }}>
                         +{team.photos.length - 1}
                       </div>
@@ -64,43 +74,64 @@ export function TeamsShowcasePage() {
                   </div>
                 ) : (
                   <div style={{
-                    width: '100%', height: 220,
-                    background: 'linear-gradient(135deg, #1677ff22, #1677ff44)',
+                    width: '100%', aspectRatio: '4 / 3',
+                    background: 'linear-gradient(135deg, #e6f4ff, #d6e4ff)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
-                    <TeamOutlined style={{ fontSize: 60, color: '#1677ff' }} />
+                    <TeamOutlined style={{ fontSize: 56, color: '#91caff' }} />
                   </div>
                 )}
 
                 {/* 文字信息区域 */}
-                <div style={{ padding: '12px 16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                    <Text strong style={{ fontSize: 16 }}>{team.name}</Text>
-                    {team.tag && <Tag color="blue">{team.tag}</Tag>}
-                    {team.is_featured && <Tag color="gold">精选</Tag>}
+                <div style={{ padding: '14px 16px 16px' }}>
+                  {/* 战队名 + 标签 */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <Text strong style={{ fontSize: 16, lineHeight: 1.2 }}>{team.name}</Text>
+                    {team.tag && <Tag color="blue" style={{ margin: 0, borderRadius: 4, fontSize: 12 }}>{team.tag}</Tag>}
+                    {team.is_featured && <Tag color="gold" style={{ margin: 0, borderRadius: 4, fontSize: 12 }}>精选</Tag>}
                   </div>
 
-                  <div style={{ marginBottom: 6 }}>
-                    <Text type="secondary" style={{ fontSize: 13 }}>
+                  {/* 成就 */}
+                  {team.achievement && (
+                    <div style={{ marginBottom: 8 }}>
+                      <Tag color="orange" style={{ borderRadius: 4, fontSize: 12 }}>{team.achievement}</Tag>
+                    </div>
+                  )}
+
+                  {/* 简介 */}
+                  {team.description && (
+                    <Paragraph
+                      ellipsis={{ rows: 2 }}
+                      style={{ marginBottom: 10, fontSize: 13, color: '#666', lineHeight: 1.6 }}
+                    >
+                      {team.description}
+                    </Paragraph>
+                  )}
+
+                  {/* 成员数 + 队长 */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 6 }}>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
                       <UserOutlined /> {team.member_count || 0} 名成员
                     </Text>
                     {team.captain?.nickname && (
-                      <Text type="secondary" style={{ fontSize: 13, marginLeft: 12 }}>
-                        队长: {team.captain.nickname}
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        <CrownOutlined /> {team.captain.nickname}
                       </Text>
                     )}
                   </div>
 
-                  {team.achievement && (
-                    <div style={{ marginBottom: 6 }}>
-                      <Tag color="orange">{team.achievement}</Tag>
+                  {/* 队员ID预览 */}
+                  {team.members?.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                      {team.members.slice(0, 4).map((m: any) => (
+                        <Tag key={m.id} style={{ fontSize: 11, margin: 0, borderRadius: 4 }}>
+                          {m.user?.game_ids || m.user?.nickname || '-'}
+                        </Tag>
+                      ))}
+                      {team.members.length > 4 && (
+                        <Text type="secondary" style={{ fontSize: 11 }}>等{team.members.length}人</Text>
+                      )}
                     </div>
-                  )}
-
-                  {team.description && (
-                    <Paragraph ellipsis={{ rows: 2 }} type="secondary" style={{ marginBottom: 0, fontSize: 13 }}>
-                      {team.description}
-                    </Paragraph>
                   )}
                 </div>
               </Card>
@@ -129,6 +160,29 @@ export function TeamsShowcasePage() {
               <div style={{ marginBottom: 16 }}>
                 <Text strong>战队介绍</Text>
                 <Paragraph style={{ marginTop: 4 }}>{detailModal.team.description}</Paragraph>
+              </div>
+            )}
+            {detailModal.team.members?.length > 0 && (
+              <div style={{ marginBottom: 16 }}>
+                <Text strong>队员列表</Text>
+                <List
+                  size="small"
+                  dataSource={detailModal.team.members}
+                  style={{ marginTop: 8 }}
+                  renderItem={(m: any) => (
+                    <List.Item style={{ padding: '6px 0' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Tag color={m.role === 'captain' ? 'gold' : 'default'} style={{ margin: 0, fontSize: 11 }}>
+                          {m.role === 'captain' ? '队长' : '队员'}
+                        </Tag>
+                        <Text>{m.user?.nickname || '-'}</Text>
+                        {m.user?.game_ids && (
+                          <Text type="secondary" style={{ fontSize: 12 }}>({m.user.game_ids})</Text>
+                        )}
+                      </div>
+                    </List.Item>
+                  )}
+                />
               </div>
             )}
             {detailModal.team.photos?.length > 0 && (

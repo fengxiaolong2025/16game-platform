@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Row, Col, Tag, Typography, Input, Select, Space, Empty, Spin, Button, Modal, Form, message, Popconfirm, DatePicker, Radio, InputNumber, Image } from 'antd';
-import { SearchOutlined, TrophyOutlined, UserOutlined, CalendarOutlined, EditOutlined, DeleteOutlined, SoundOutlined, PushpinOutlined } from '@ant-design/icons';
+import { SearchOutlined, TrophyOutlined, UserOutlined, CalendarOutlined, EditOutlined, DeleteOutlined, SoundOutlined } from '@ant-design/icons';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { tournamentApi, announcementApi } from '../api';
 import { useAuthStore } from '../store';
 import dayjs from 'dayjs';
@@ -32,6 +34,7 @@ export function HomePage() {
   const [editModal, setEditModal] = useState<{ open: boolean; tournament: any }>({ open: false, tournament: null });
   const [editForm] = Form.useForm();
   const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [annDetail, setAnnDetail] = useState<any>(null);
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
@@ -132,33 +135,65 @@ export function HomePage() {
           style={{ marginBottom: 24, borderRadius: 12, background: 'linear-gradient(135deg, #f0f5ff 0%, #e6f4ff 100%)', border: '1px solid #d6e4ff' }}
           bodyStyle={{ padding: '16px 20px' }}
         >
-          <Space direction="vertical" size={12} style={{ width: '100%' }}>
-            <Space>
-              <SoundOutlined style={{ color: '#1677ff', fontSize: 16 }} />
-              <Text strong style={{ color: '#1677ff' }}>平台公告</Text>
-            </Space>
-            {announcements.map((a: any) => (
-              <div key={a.id} style={{ background: '#fff', padding: 12, borderRadius: 8, border: '1px solid #e8e8e8' }}>
-                <Space style={{ marginBottom: 4 }}>
-                  {a.is_pinned && <Tag color="orange" icon={<PushpinOutlined />}>置顶</Tag>}
-                  <Text strong>{a.title}</Text>
-                </Space>
-                <div style={{ color: '#666', whiteSpace: 'pre-wrap', fontSize: 13 }}>{a.content}</div>
-                {a.images?.length > 0 && (
-                  <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    {a.images.map((url: string, i: number) => (
-                      <Image key={i} src={url} width={100} height={100} style={{ objectFit: 'cover', borderRadius: 4 }} />
-                    ))}
-                  </div>
-                )}
-                <Text type="secondary" style={{ fontSize: 12, marginTop: 8, display: 'block' }}>
-                  {a.author?.nickname || '管理员'} · {new Date(a.created_at).toLocaleString('zh-CN')}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <SoundOutlined style={{ color: '#1677ff', fontSize: 16 }} />
+            <Text strong style={{ color: '#1677ff' }}>平台公告</Text>
+          </div>
+          <div>
+            {announcements.map((a: any, index: number) => (
+              <div
+                key={a.id}
+                onClick={() => setAnnDetail(a)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '10px 12px', cursor: 'pointer',
+                  background: index % 2 === 0 ? '#fff' : 'transparent',
+                  borderRadius: 6, marginBottom: 2,
+                  transition: 'background 0.2s',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#e6f4ff')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = index % 2 === 0 ? '#fff' : 'transparent')}
+              >
+                {a.is_pinned && <Tag color="orange" style={{ margin: 0, fontSize: 11 }}>置顶</Tag>}
+                <Text ellipsis style={{ flex: 1 }}>{a.title}</Text>
+                <Text type="secondary" style={{ fontSize: 12, flexShrink: 0 }}>
+                  {new Date(a.created_at).toLocaleDateString('zh-CN')}
                 </Text>
               </div>
             ))}
-          </Space>
+          </div>
         </Card>
       )}
+
+      {/* Announcement Detail Modal */}
+      <Modal
+        title={annDetail?.title}
+        open={!!annDetail}
+        onCancel={() => setAnnDetail(null)}
+        footer={null}
+        width={600}
+      >
+        {annDetail && (
+          <div>
+            <div style={{ marginBottom: 12 }}>
+              {annDetail.is_pinned && <Tag color="orange">置顶</Tag>}
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                {annDetail.author?.nickname || '管理员'} · {new Date(annDetail.created_at).toLocaleString('zh-CN')}
+              </Text>
+            </div>
+            <div className="announcement-content" style={{ lineHeight: 1.8 }}>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{annDetail.content || ''}</ReactMarkdown>
+            </div>
+            {annDetail.images?.length > 0 && (
+              <div style={{ marginTop: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {annDetail.images.map((url: string, i: number) => (
+                  <Image key={i} src={url} width={120} height={120} style={{ objectFit: 'cover', borderRadius: 6 }} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
 
       <div style={{ marginBottom: 24, display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
         <Input.Search

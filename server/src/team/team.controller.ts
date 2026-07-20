@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Request, BadRequestException, UseInterceptors, UploadedFiles } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Request, BadRequestException, ForbiddenException, UseInterceptors, UploadedFiles } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
@@ -42,6 +42,12 @@ export class TeamController {
   @Get('showcase')
   async showcase() {
     return this.teamService.findFeatured();
+  }
+
+  @Get('export')
+  async export(@Request() req) {
+    if (req.user.role !== 1) throw new ForbiddenException('仅管理员可导出');
+    return this.teamService.findAllWithMembers();
   }
 
   @Get('captain/my')

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Table, Button, Tag, Space, message, Modal, Input, Popconfirm, Card, Tabs, Form, Switch, Upload, Image } from 'antd';
-import { DeleteOutlined, KeyOutlined, ReloadOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
-import { authApi, announcementApi, honorRollApi } from '../api';
+import { DeleteOutlined, KeyOutlined, ReloadOutlined, PlusOutlined, UploadOutlined, DownloadOutlined } from '@ant-design/icons';
+import MDEditor from '@uiw/react-md-editor';
+import { authApi, announcementApi, honorRollApi, teamApi } from '../api';
 
 // ========== User Management ==========
 function UserManagement() {
@@ -109,6 +110,7 @@ function AnnouncementManagement() {
   const [form] = Form.useForm();
   const [uploading, setUploading] = useState(false);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [mdContent, setMdContent] = useState('');
 
   useEffect(() => { loadAnnouncements(); }, []);
 
@@ -124,6 +126,7 @@ function AnnouncementManagement() {
 
   const openCreate = () => {
     form.resetFields();
+    setMdContent('');
     setImageUrls([]);
     setEditModal({ open: true, data: null });
   };
@@ -131,10 +134,10 @@ function AnnouncementManagement() {
   const openEdit = (record: any) => {
     form.setFieldsValue({
       title: record.title,
-      content: record.content,
       is_pinned: record.is_pinned,
       status: record.status,
     });
+    setMdContent(record.content || '');
     setImageUrls(record.images || []);
     setEditModal({ open: true, data: record });
   };
@@ -142,9 +145,13 @@ function AnnouncementManagement() {
   const handleSave = async () => {
     try {
       const values = await form.validateFields();
+      if (!mdContent.trim()) {
+        message.error('请输入公告内容');
+        return;
+      }
       const data = {
         title: values.title,
-        content: values.content,
+        content: mdContent,
         images: imageUrls,
         is_pinned: values.is_pinned || false,
         status: values.status || 'published',
@@ -157,6 +164,7 @@ function AnnouncementManagement() {
         message.success('公告已发布');
       }
       setEditModal({ open: false, data: null });
+      setMdContent('');
       setImageUrls([]);
       loadAnnouncements();
     } catch (err: any) {
@@ -226,7 +234,7 @@ function AnnouncementManagement() {
         title={editModal.data ? '编辑公告' : '发布公告'}
         open={editModal.open}
         onOk={handleSave}
-        onCancel={() => { setEditModal({ open: false, data: null }); setImageUrls([]); }}
+        onCancel={() => { setEditModal({ open: false, data: null }); setMdContent(''); setImageUrls([]); }}
         okText={editModal.data ? '保存' : '发布'}
         cancelText="取消"
         width={640}
@@ -235,8 +243,20 @@ function AnnouncementManagement() {
           <Form.Item name="title" label="公告标题" rules={[{ required: true, message: '请输入标题' }]}>
             <Input placeholder="输入公告标题" maxLength={100} />
           </Form.Item>
-          <Form.Item name="content" label="公告内容" rules={[{ required: true, message: '请输入内容' }]}>
-            <Input.TextArea rows={6} placeholder="输入公告内容，支持多行文本" />
+          <Form.Item label="公告内容" required>
+            <div data-color-mode="light">
+              <MDEditor
+                value={mdContent}
+                onChange={(val) => setMdContent(val || '')}
+                height={200}
+                preview="edit"
+                visibleDragbar={false}
+                hideToolbar={false}
+              />
+            </div>
+            <div style={{ fontSize: 12, color: '#999', marginTop: 4 }}>
+              支持 Markdown 格式：**加粗** *斜体* # 标题 - 列表 &gt; 引用 `代码`
+            </div>
           </Form.Item>
           <Form.Item label="图片（最多9张）">
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
@@ -458,6 +478,89 @@ function HonorRollManagement() {
   );
 }
 
+// ========== Team Management ==========
+function TeamManagement() {
+  const [teams, setTeams] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
+
+  useEffect(() => { loadTeams(); }, []);
+
+  const loadTeams = async () => {
+    setLoading(true);
+    try {
+      const res = await teamApi.export();
+      setTeams(res.data || []);
+    } catch (err: any) {
+      message.error(err.response?.data?.message || '加载失败');
+    } finally { setLoading(false); }
+  };
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const res = await teamApi.export();
+      const data = res.data || [];
+
+      // Build CSV
+      const rows = [['战队名称', '标签', '队长', '成员数', '队员ID列表', '成就', '创建时间']];
+      for (const t of data) {
+        const memberIds = (t.members || [])
+          .map((m: any) => m.user?.game_ids || m.user?.nickname || '')
+          .filter(Boolean)
+          .join('、');
+        rows.push([
+          t.name || '',
+          t.tag || '',
+          t.captain?.nickname || '',
+          String(t.member_count || 0),
+          memberIds,
+          t.achievement || '',
+          t.created_at ? new Date(t.created_at).toLocaleString('zh-CN') : '',
+        ]);
+      }
+
+      const csv = '\uFEFF' + rows.map(r => r.map(c => `"${c.replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `战队数据_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      message.success('导出成功');
+    } catch (err: any) {
+      message.error(err.response?.data?.message || '导出失败');
+    } finally { setExporting(false); }
+  };
+
+  const columns = [
+    { title: '战队名称', dataIndex: 'name', render: (v: string) => <strong>{v}</strong> },
+    { title: '标签', dataIndex: 'tag', render: (v: string) => v || '-' },
+    { title: '队长', render: (_: any, r: any) => r.captain?.nickname || '-' },
+    { title: '成员数', dataIndex: 'member_count', width: 80 },
+    { title: '队员ID', render: (_: any, r: any) => {
+      const members = (r.members || []).map((m: any) => m.user?.game_ids || m.user?.nickname || '-');
+      return members.length > 0 ? members.join('、') : '-';
+    }},
+    { title: '成就', dataIndex: 'achievement', render: (v: string) => v ? <Tag color="orange">{v}</Tag> : '-' },
+    { title: '创建时间', dataIndex: 'created_at', render: (v: string) => new Date(v).toLocaleString('zh-CN') },
+  ];
+
+  return (
+    <Card style={{ borderRadius: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <h2 style={{ margin: 0 }}>战队管理（共 {teams.length} 支）</h2>
+        <Space>
+          <Button icon={<ReloadOutlined />} onClick={loadTeams}>刷新</Button>
+          <Button type="primary" icon={<DownloadOutlined />} loading={exporting} onClick={handleExport}>导出全部数据</Button>
+        </Space>
+      </div>
+      <Table dataSource={teams} columns={columns} rowKey="id" loading={loading} pagination={{ pageSize: 20 }} size="small" scroll={{ x: 900 }} />
+    </Card>
+  );
+}
+
 // ========== Admin Page ==========
 export function AdminPage() {
   return (
@@ -466,6 +569,7 @@ export function AdminPage() {
         defaultActiveKey="users"
         items={[
           { key: 'users', label: '用户管理', children: <UserManagement /> },
+          { key: 'teams', label: '战队管理', children: <TeamManagement /> },
           { key: 'announcements', label: '公告管理', children: <AnnouncementManagement /> },
           { key: 'honor', label: '光荣榜管理', children: <HonorRollManagement /> },
         ]}

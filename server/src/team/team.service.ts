@@ -170,11 +170,33 @@ export class TeamService {
   }
 
   async findFeatured(): Promise<Team[]> {
-    return this.teamRepo.find({
+    const teams = await this.teamRepo.find({
       order: { is_featured: 'DESC', created_at: 'DESC' },
       take: 50,
       relations: { captain: true },
     });
+    // Load approved members with user info for each team
+    for (const team of teams) {
+      (team as any).members = await this.memberRepo.find({
+        where: { team_id: team.id, status: 'approved' },
+        relations: { user: true },
+      });
+    }
+    return teams;
+  }
+
+  async findAllWithMembers(): Promise<Team[]> {
+    const teams = await this.teamRepo.find({
+      order: { created_at: 'DESC' },
+      relations: { captain: true },
+    });
+    for (const team of teams) {
+      (team as any).members = await this.memberRepo.find({
+        where: { team_id: team.id, status: 'approved' },
+        relations: { user: true },
+      });
+    }
+    return teams;
   }
 
   async findByIdSilent(id: string): Promise<Team | null> {
