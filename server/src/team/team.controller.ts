@@ -4,6 +4,7 @@ import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 import { TeamService } from './team.service';
+import { UserService } from '../user/user.service';
 import { JwtAuthGuard } from '../user/jwt-auth.guard';
 
 const TEAM_UPLOAD_DIR = join(__dirname, '..', '..', 'uploads', 'teams');
@@ -22,7 +23,10 @@ const teamStorage = diskStorage({
 @Controller('api/teams')
 @UseGuards(JwtAuthGuard)
 export class TeamController {
-  constructor(private teamService: TeamService) {}
+  constructor(
+    private teamService: TeamService,
+    private userService: UserService,
+  ) {}
 
   @Post()
   async create(@Request() req, @Body() body: any) {
@@ -46,7 +50,8 @@ export class TeamController {
 
   @Get('export')
   async export(@Request() req) {
-    if (req.user.role !== 1) throw new ForbiddenException('仅管理员可导出');
+    const isAdmin = await this.userService.isAdmin(req.user.id);
+    if (!isAdmin) throw new ForbiddenException('仅管理员可导出');
     return this.teamService.findAllWithMembers();
   }
 
