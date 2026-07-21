@@ -5,6 +5,7 @@ import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { User } from './user.entity';
 import { UserService } from './user.service';
+import { WechatAuthService } from './wechat-auth.service';
 import { UserController } from './user.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { Tournament } from '../tournament/tournament.entity';
@@ -26,8 +27,8 @@ import { Notification } from '../notification/notification.entity';
       }),
     }),
   ],
-  providers: [UserService, JwtStrategy],
+  providers: [UserService, WechatAuthService, JwtStrategy],
   controllers: [UserController],
-  exports: [UserService],
+  exports: [UserService, WechatAuthService],
 })
 export class UserModule {}

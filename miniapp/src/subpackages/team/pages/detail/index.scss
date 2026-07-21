@@ -1,0 +1,169 @@
+.team-detail-page {
+  min-height: 100vh;
+  background: #f5f6fa;
+  padding-bottom: 120rpx;
+}
+
+.team-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 40rpx 32rpx;
+  display: flex;
+  align-items: center;
+  gap: 28rpx;
+
+  .team-logo {
+    width: 120rpx;
+    height: 120rpx;
+    border-radius: 20rpx;
+    border: 4rpx solid rgba(255, 255, 255, 0.3);
+  }
+
+  .team-info {
+    flex: 1;
+
+    .team-name-row {
+      display: flex;
+      align-items: center;
+      gap: 12rpx;
+      margin-bottom: 12rpx;
+
+      .team-name {
+        font-size: 36rpx;
+        font-weight: bold;
+        color: #fff;
+      }
+
+      .team-tag {
+        font-size: 26rpx;
+        color: rgba(255, 255, 255, 0.7);
+      }
+    }
+
+    .team-captain, .team-count {
+      font-size: 26rpx;
+      color: rgba(255, 255, 255, 0.85);
+      display: block;
+      margin-top: 8rpx;
+    }
+  }
+}
+
+.info-card {
+  background: #fff;
+  margin: 24rpx;
+  padding: 32rpx 28rpx;
+  border-radius: 16rpx;
+
+  .card-title {
+    font-size: 30rpx;
+    font-weight: bold;
+    color: #333;
+    display: block;
+    margin-bottom: 20rpx;
+    padding-left: 16rpx;
+    border-left: 8rpx solid #667eea;
+  }
+
+  .card-content {
+    font-size: 28rpx;
+    color: #555;
+    line-height: 1.8;
+  }
+
+  .empty-text {
+    color: #999;
+    font-size: 28rpx;
+  }
+}
+
+.photo-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+
+  .photo-item {
+    width: calc((100% - 24rpx) / 3);
+    height: 200rpx;
+    border-radius: 12rpx;
+  }
+}
+
+.member-list {
+  .member-item {
+    display: flex;
+    align-items: center;
+    gap: 20rpx;
+    padding: 20rpx 0;
+    border-bottom: 2rpx solid #f0f2f5;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .member-avatar {
+      width: 80rpx;
+      height: 80rpx;
+      border-radius: 50%;
+    }
+
+    .member-info {
+      flex: 1;
+
+      .member-name-row {
+        display: flex;
+        align-items: center;
+        gap: 12rpx;
+
+        .member-name {
+          font-size: 28rpx;
+          font-weight: 600;
+          color: #333;
+        }
+
+        .role-tag {
+          font-size: 22rpx;
+          padding: 4rpx 16rpx;
+          border-radius: 12rpx;
+          background: #f0f2f5;
+          color: #666;
+
+          &.captain-tag {
+            background: #fff3e0;
+            color: #ff9800;
+          }
+        }
+      }
+
+      .member-join-time {
+        font-size: 24rpx;
+        color: #999;
+        margin-top: 6rpx;
+      }
+    }
+  }
+}
+
+.action-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  padding: 20rpx 32rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.06);
+
+  .action-btn {
+    width: 100%;
+    border-radius: 48rpx;
+    font-size: 32rpx;
+    height: 88rpx;
+    line-height: 88rpx;
+  }
+
+  .action-btn-danger {
+    background: #fff;
+    color: #f44336;
+    border: 2rpx solid #f44336;
+  }
+}

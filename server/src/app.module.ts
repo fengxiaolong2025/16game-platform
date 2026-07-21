@@ -11,6 +11,7 @@ import { NotificationModule } from './notification/notification.module';
 import { RankingModule } from './ranking/ranking.module';
 import { AnnouncementModule } from './announcement/announcement.module';
 import { HonorRollModule } from './honor-roll/honor-roll.module';
+import { CommunityModule } from './community/community.module';
 import { join } from 'path';
 
 @Module({
@@ -30,6 +31,8 @@ import { join } from 'path';
           // (TypeORM synchronize creates FK constraints but we want flexibility)
           prepareDatabase: (db: any) => {
             db.pragma('foreign_keys = OFF');
+            // 开启 WAL 模式提升并发读性能（适配小程序并发场景）
+            db.pragma('journal_mode = WAL');
           },
         };
       },
@@ -44,6 +47,7 @@ import { join } from 'path';
     RankingModule,
     AnnouncementModule,
     HonorRollModule,
+    CommunityModule,
   ],
 })
 export class AppModule {}

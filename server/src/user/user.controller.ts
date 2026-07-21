@@ -4,6 +4,7 @@ import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 import { UserService } from './user.service';
+import { WechatAuthService } from './wechat-auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
 const PLAYER_UPLOAD_DIR = join(__dirname, '..', '..', 'uploads', 'players');
@@ -21,7 +22,10 @@ const playerStorage = diskStorage({
 
 @Controller('api/users')
 export class UserController {
-  constructor(private userService: UserService) {}
+  constructor(
+    private userService: UserService,
+    private wechatAuthService: WechatAuthService,
+  ) {}
 
   @Post('register/phone')
   async registerByPhone(@Body() body: { phone: string; code: string; nickname?: string }) {
@@ -59,14 +63,16 @@ export class UserController {
 
   @Post('login/wechat')
   @HttpCode(HttpStatus.OK)
-  async loginByWechat(@Body() body: { code: string }) {
-    // In production, exchange code with WeChat API
-    const mockProfile = {
-      unionId: `wx_${body.code}`,
-      nickname: '微信用户',
-      avatar: '',
+  async loginByWechat(@Body() body: { code: string; nickname?: string; avatar?: string }) {
+    // 调用微信 code2Session 获取 openid/session_key
+    const session = await this.wechatAuthService.code2Session(body.code);
+    // 用 unionid（跨端打通）或 openid 作为唯一标识
+    const profile = {
+      unionId: session.unionid || session.openid,
+      nickname: body.nickname || '微信用户',
+      avatar: body.avatar || '',
     };
-    return this.userService.createOrUpdateByWechat(mockProfile);
+    return this.userService.createOrUpdateByWechat(profile);
   }
 
   @Get('me')

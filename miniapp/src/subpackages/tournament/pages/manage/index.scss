@@ -1,0 +1,300 @@
+.manage-page {
+  min-height: 100vh;
+  background: #f5f6fa;
+  padding-bottom: 40rpx;
+}
+
+.tour-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 40rpx 32rpx;
+  color: #fff;
+
+  .tour-title {
+    font-size: 36rpx;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 16rpx;
+  }
+
+  .tour-meta {
+    display: flex;
+    gap: 16rpx;
+    align-items: center;
+
+    .tag {
+      font-size: 24rpx;
+      padding: 6rpx 20rpx;
+      border-radius: 20rpx;
+    }
+
+    .meta-text {
+      font-size: 26rpx;
+      opacity: 0.85;
+    }
+  }
+}
+
+.card-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  display: block;
+  padding-left: 16rpx;
+  border-left: 8rpx solid #667eea;
+}
+
+/* 状态流程 */
+.status-flow-card {
+  background: #fff;
+  margin: 24rpx;
+  padding: 32rpx 28rpx;
+  border-radius: 16rpx;
+
+  .flow-steps {
+    display: flex;
+    justify-content: space-between;
+    margin: 32rpx 0 24rpx;
+    position: relative;
+  }
+
+  .flow-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    position: relative;
+
+    .step-dot {
+      width: 32rpx;
+      height: 32rpx;
+      border-radius: 50%;
+      background: #e0e0e0;
+      margin-bottom: 12rpx;
+      position: relative;
+      z-index: 1;
+    }
+
+    .step-label {
+      font-size: 22rpx;
+      color: #999;
+      text-align: center;
+    }
+
+    &.current {
+      .step-dot {
+        background: #667eea;
+        box-shadow: 0 0 0 8rpx rgba(102, 126, 234, 0.2);
+      }
+
+      .step-label {
+        color: #667eea;
+        font-weight: bold;
+      }
+    }
+
+    &.past {
+      .step-dot {
+        background: #4caf50;
+      }
+
+      .step-label {
+        color: #4caf50;
+      }
+    }
+
+    &:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      top: 16rpx;
+      left: 60%;
+      width: 80%;
+      height: 4rpx;
+      background: #e0e0e0;
+    }
+
+    &.past:not(:last-child)::after {
+      background: #4caf50;
+    }
+  }
+
+  .advance-btn {
+    width: 100%;
+    border-radius: 48rpx;
+    margin-top: 16rpx;
+    height: 80rpx;
+    line-height: 80rpx;
+    font-size: 30rpx;
+  }
+}
+
+/* 报名管理 */
+.reg-section {
+  background: #fff;
+  margin: 24rpx;
+  padding: 32rpx 28rpx;
+  border-radius: 16rpx;
+
+  .reg-header {
+    margin-bottom: 20rpx;
+
+    .reg-stats {
+      display: flex;
+      gap: 24rpx;
+      margin-top: 16rpx;
+
+      .stat-item {
+        font-size: 26rpx;
+        color: #666;
+        background: #f0f2f5;
+        padding: 8rpx 24rpx;
+        border-radius: 20rpx;
+      }
+    }
+  }
+}
+
+.batch-actions {
+  display: flex;
+  gap: 20rpx;
+  margin-bottom: 20rpx;
+
+  .batch-btn {
+    flex: 1;
+    border-radius: 12rpx;
+    font-size: 26rpx;
+
+    &.batch-approve {
+      background: #e8f5e9;
+      color: #4caf50;
+      border: 2rpx solid #4caf50;
+    }
+
+    &.batch-reject {
+      background: #ffebee;
+      color: #f44336;
+      border: 2rpx solid #f44336;
+    }
+  }
+}
+
+.filter-tabs {
+  display: flex;
+  white-space: nowrap;
+  margin-bottom: 20rpx;
+  gap: 12rpx;
+
+  .filter-tab {
+    display: inline-block;
+    padding: 12rpx 32rpx;
+    border-radius: 24rpx;
+    font-size: 26rpx;
+    color: #666;
+    background: #f0f2f5;
+
+    &.active {
+      background: #667eea;
+      color: #fff;
+    }
+  }
+}
+
+.reg-list {
+  .reg-card {
+    background: #f8f9fb;
+    border-radius: 12rpx;
+    padding: 24rpx 28rpx;
+    margin-bottom: 16rpx;
+    border: 2rpx solid #eceef2;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    .reg-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16rpx;
+
+      .reg-user {
+        display: flex;
+        align-items: center;
+        gap: 12rpx;
+
+        .reg-name {
+          font-size: 28rpx;
+          font-weight: 600;
+          color: #333;
+        }
+
+        .reg-team {
+          font-size: 24rpx;
+          color: #667eea;
+        }
+      }
+
+      .reg-time {
+        font-size: 24rpx;
+        color: #999;
+      }
+    }
+
+    .reg-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      .reg-actions {
+        display: flex;
+        gap: 16rpx;
+
+        .action-btn {
+          border-radius: 8rpx;
+          font-size: 24rpx;
+          padding: 0 24rpx;
+        }
+
+        .approve-btn {
+          background: #4caf50;
+          color: #fff;
+        }
+
+        .reject-btn {
+          background: #fff;
+          color: #f44336;
+          border: 2rpx solid #f44336;
+        }
+      }
+    }
+
+    .custom-fields {
+      margin-top: 16rpx;
+      padding-top: 16rpx;
+      border-top: 2rpx solid #eceef2;
+
+      .custom-field {
+        display: block;
+        font-size: 24rpx;
+        color: #888;
+        margin-bottom: 4rpx;
+      }
+    }
+  }
+}
+
+.danger-zone {
+  margin: 24rpx;
+  padding: 32rpx 28rpx;
+  text-align: center;
+
+  .danger-btn {
+    background: #fff;
+    color: #f44336;
+    border: 2rpx solid #f44336;
+    border-radius: 48rpx;
+    width: 100%;
+    height: 80rpx;
+    line-height: 80rpx;
+    font-size: 30rpx;
+  }
+}
