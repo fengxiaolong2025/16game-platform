@@ -1,4 +1,4 @@
-import { View, Text, Image, ScrollView } from '@tarojs/components'
+import { View, Text, Image, ScrollView, Button } from '@tarojs/components'
 import Taro, { useLoad, usePullDownRefresh, useReachBottom } from '@tarojs/taro'
 import { useState, useCallback } from 'react'
 import { tournamentApi, announcementApi } from '../../api'
@@ -33,6 +33,8 @@ export default function Home() {
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
   const user = useAuthStore((s) => s.user)
+  const token = useAuthStore((s) => s.token)
+  const fetchUser = useAuthStore((s) => s.fetchUser)
 
   const fetchData = useCallback(async (isRefresh = false) => {
     const currentPage = isRefresh ? 1 : page
@@ -63,6 +65,10 @@ export default function Home() {
   }, [page])
 
   useLoad(() => {
+    // 如果已登录，静默拉取最新用户信息
+    if (token) {
+      fetchUser()
+    }
     fetchData(true)
   })
 
@@ -96,15 +102,36 @@ export default function Home() {
         <View className="flex-between">
           <View>
             <Text className="welcome-text">{user?.nickname || '电竞爱好者'}</Text>
-            <Text className="welcome-sub">欢迎来到电竞平台</Text>
+            <Text className="welcome-sub">{token ? '欢迎来到电竞平台' : '登录后体验更多功能'}</Text>
           </View>
-          <Image
-            className="user-avatar"
-            src={toAbsUrl(user?.avatar) || 'https://via.placeholder.com/80'}
-            mode="aspectFill"
-          />
+          {token ? (
+            <Image
+              className="user-avatar"
+              src={toAbsUrl(user?.avatar) || 'https://via.placeholder.com/80'}
+              mode="aspectFill"
+            />
+          ) : (
+            <Button
+              className="login-btn-header"
+              size="mini"
+              onClick={() => Taro.navigateTo({ url: '/pages/login/index' })}
+            >
+              登录
+            </Button>
+          )}
         </View>
       </View>
+
+      {/* 未登录引导 */}
+      {!token && (
+        <View className="login-banner" onClick={() => Taro.navigateTo({ url: '/pages/login/index' })}>
+          <View className="login-banner-content">
+            <Text className="login-banner-title">🎮 欢迎使用电竞赛事平台</Text>
+            <Text className="login-banner-desc">微信一键登录，参与赛事、组建战队、社区交流</Text>
+          </View>
+          <Text className="login-banner-arrow">去登录 ›</Text>
+        </View>
+      )}
 
       {/* 公告栏 */}
       {announcements.length > 0 && (

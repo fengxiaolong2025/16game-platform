@@ -37,7 +37,7 @@ export class CommunityService {
       order: { created_at: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
-      relations: ['author'],
+      relations: { author: true },
     });
 
     return { items, total, page, limit };
@@ -46,7 +46,7 @@ export class CommunityService {
   async findOne(id: string) {
     const post = await this.postRepo.findOne({
       where: { id },
-      relations: ['author'],
+      relations: { author: true },
     });
     if (!post) return null;
 
@@ -97,7 +97,7 @@ export class CommunityService {
     return this.postRepo.find({
       where: { author_id: userId, status: 'published' },
       order: { created_at: 'DESC' },
-      relations: ['author'],
+      relations: { author: true },
     });
   }
 
@@ -147,7 +147,7 @@ export class CommunityService {
     return this.commentRepo.find({
       where: { post_id: postId, status: 'published' },
       order: { created_at: 'ASC' },
-      relations: ['author'],
+      relations: { author: true },
     });
   }
 

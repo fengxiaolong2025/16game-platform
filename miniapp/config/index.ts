@@ -18,9 +18,14 @@ export default defineConfig(async (merge, { command, mode }) => {
     outputRoot: 'dist',
     plugins: [],
     defineConstants: {},
+    env: {
+      TARO_APP_ENV: JSON.stringify(process.env.TARO_APP_ENV || 'dev')
+    },
     copy: {
-      patterns: [],
-      options: {}
+      patterns: [
+        { from: 'src/assets/tabbar', to: 'assets/tabbar' },
+      ],
+      options: {},
     },
     framework: 'react',
     compiler: 'webpack5',
@@ -31,6 +36,14 @@ export default defineConfig(async (merge, { command, mode }) => {
       data: `@import "@nutui/nutui-react-taro/dist/styles/variables.scss";`
     },
     mini: {
+      webpackChain(chain, { webpack }) {
+        // 强制 development 模式，避免 React jsx-dev-runtime 被打包成 production.min.js
+        // 该生产版 jsxDEV=undefined，会导致所有页面空白
+        chain.mode('development')
+        // 完全禁用压缩，避免 CssMinimizerPlugin (css-tree) OOM
+        // 开发模式下不需要压缩
+        chain.optimization.minimize(false)
+      },
       postcss: {
         pxtransform: {
           enable: true,

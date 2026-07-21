@@ -29,7 +29,7 @@ export class UserService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    // Auto-create admin account if not exists
+    // Auto-create admin account if not exists, and ensure role is correct
     const admin = await this.userRepo.findOne({ where: { username: 'admin' } });
     if (!admin) {
       const password_hash = await bcrypt.hash('fxl@2025', 10);
@@ -41,6 +41,11 @@ export class UserService implements OnModuleInit {
       });
       await this.userRepo.save(adminUser);
       console.log('✅ Admin account created: admin / fxl@2025');
+    } else if (admin.role !== 1) {
+      // Fix admin role if it was incorrectly migrated
+      admin.role = 1;
+      await this.userRepo.save(admin);
+      console.log('✅ Admin role corrected to 1');
     }
   }
 

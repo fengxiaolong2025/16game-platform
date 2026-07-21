@@ -2,8 +2,11 @@ node_modules/
 dist/
 data/
 *.db
+*.db.bak
+*.bak
 /tmp/
 .DS_Store
 *.log
+*.tar.gz
 .env
 .swc/

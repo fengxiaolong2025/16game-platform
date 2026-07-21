@@ -1,5 +1,5 @@
 import { View, Text, Image, Button } from '@tarojs/components'
-import Taro from '@tarojs/taro'
+import Taro, { useLoad } from '@tarojs/taro'
 import { useAuthStore } from '../../store/auth'
 import { toAbsUrl } from '../../utils'
 import './index.scss'
@@ -22,6 +22,12 @@ export default function Profile() {
       },
     })
   }
+
+  useLoad(() => {
+    if (token) {
+      fetchUser()
+    }
+  })
 
   const menuItems = [
     { icon: '📋', text: '我的报名', url: '/subpackages/tournament/pages/manage/index?type=participated' },

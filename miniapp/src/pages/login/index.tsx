@@ -37,8 +37,10 @@ export default function Login() {
         Taro.showToast({ title: '登录成功', icon: 'success' })
         setTimeout(() => Taro.switchTab({ url: '/pages/home/index' }), 500)
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('登录失败', err)
+      const msg = err?.errMsg || err?.message || '登录失败，请检查网络'
+      Taro.showToast({ title: msg, icon: 'none', duration: 3000 })
     } finally {
       setLoading(false)
     }

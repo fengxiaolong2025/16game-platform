@@ -2,9 +2,9 @@
   "miniprogramRoot": "./dist",
   "projectname": "esports-miniapp",
   "description": "电竞赛事平台微信小程序",
-  "appid": "touristappid",
+  "appid": "wx38627c12ff9f0f9e",
   "setting": {
-    "urlCheck": true,
+    "urlCheck": false,
     "es6": false,
     "enhance": false,
     "compileHotReLoad": false,
