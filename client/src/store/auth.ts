@@ -15,6 +15,7 @@ interface User {
   position?: string;
   player_photos?: string[];
   ladder_score?: number;
+  wechat_union_id?: string;
 }
 
 interface AuthState {

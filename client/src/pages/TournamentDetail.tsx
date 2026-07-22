@@ -241,7 +241,7 @@ export function TournamentDetailPage() {
                   { title: '胜', dataIndex: 'wins', width: 40 },
                   { title: '负', dataIndex: 'losses', width: 40 },
                   { title: '净胜', width: 50, render: (_:any, r:any) => {
-                    const diff = (r.scoreFor || 0) - (r.scoreAgainst || 0);
+                    const diff = (r.score_for || 0) - (r.score_against || 0);
                     return <span style={{ color: diff > 0 ? 'green' : diff < 0 ? 'red' : '#999' }}>{diff > 0 ? '+' : ''}{diff}</span>;
                   }},
                   { title: '积分', dataIndex: 'score', width: 50, render: (v: number) => <strong>{v}</strong> },

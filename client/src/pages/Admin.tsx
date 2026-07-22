@@ -59,25 +59,65 @@ function UserManagement() {
     }
   };
 
+  const handleUnbindWechat = async (userId: string) => {
+    try {
+      await authApi.adminUnbindWechat(userId);
+      message.success('微信解绑成功');
+      loadUsers();
+    } catch (err: any) {
+      message.error(err.response?.data?.message || '解绑失败');
+    }
+  };
+
+  const handleUpdateRole = async (userId: string, role: number) => {
+    try {
+      await authApi.adminUpdateRole(userId, role);
+      message.success(role === 2 ? '已设为二级管理员' : '已取消二级管理员');
+      loadUsers();
+    } catch (err: any) {
+      message.error(err.response?.data?.message || '操作失败');
+    }
+  };
+
+  // 当前登录用户是否为超级管理员
+  const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
+  const isSuperAdmin = currentUser?.role === 1;
+
   const columns = [
     { title: '用户名', dataIndex: 'username', render: (v: string) => <strong>{v || '-'}</strong> },
     { title: '昵称', dataIndex: 'nickname' },
-    { title: '角色', dataIndex: 'role', render: (r: number) => r === 1 ? <Tag color="red">管理员</Tag> : <Tag>普通用户</Tag> },
+    { title: '角色', dataIndex: 'role', render: (r: number) => r === 1 ? <Tag color="red">超级管理员</Tag> : r === 2 ? <Tag color="orange">二级管理员</Tag> : <Tag>普通用户</Tag> },
     { title: '状态', dataIndex: 'status', render: (s: string) => s === 'banned' ? <Tag color="red">已禁用</Tag> : <Tag color="green">正常</Tag> },
+    { title: '微信', dataIndex: 'wechat_union_id', render: (v: string) => v ? <Tag color="green">已绑定</Tag> : <Tag>未绑定</Tag> },
     { title: '手机号', dataIndex: 'phone', render: (v: string) => v || '-' },
     { title: '游戏ID', dataIndex: 'game_ids', render: (v: string) => v || '-' },
     { title: '注册时间', dataIndex: 'created_at', render: (v: string) => new Date(v).toLocaleString('zh-CN') },
     { title: '操作', render: (_: any, r: any) => r.role === 1 ? (
-      <Tag>管理员不可操作</Tag>
+      <Tag>超级管理员</Tag>
     ) : (
-      <Space>
+      <Space wrap>
         <Button size="small" icon={<KeyOutlined />} onClick={() => { setPwdModal({ open: true, userId: r.id, username: r.username || r.nickname }); setNewPassword(''); }}>
           改密
         </Button>
+        {r.wechat_union_id && (
+          <Popconfirm title="确定解绑该用户的微信？" onConfirm={() => handleUnbindWechat(r.id)}>
+            <Button size="small" danger>解绑微信</Button>
+          </Popconfirm>
+        )}
         {r.status === 'banned' ? (
           <Button size="small" type="primary" onClick={() => handleToggleStatus(r.id, r.status)}>解禁</Button>
         ) : (
           <Button size="small" onClick={() => handleToggleStatus(r.id, r.status)}>禁用</Button>
+        )}
+        {isSuperAdmin && r.role === 0 && (
+          <Popconfirm title="确定将该用户设为二级管理员？" onConfirm={() => handleUpdateRole(r.id, 2)}>
+            <Button size="small" type="primary" ghost>设为二级管理员</Button>
+          </Popconfirm>
+        )}
+        {isSuperAdmin && r.role === 2 && (
+          <Popconfirm title="确定取消该用户的二级管理员身份？" onConfirm={() => handleUpdateRole(r.id, 0)}>
+            <Button size="small" type="primary" ghost>取消二级管理员</Button>
+          </Popconfirm>
         )}
         <Popconfirm title="确定删除该用户？" onConfirm={() => handleDelete(r.id)}>
           <Button size="small" danger icon={<DeleteOutlined />}>删除</Button>

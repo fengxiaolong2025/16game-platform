@@ -26,7 +26,7 @@ export function AppLayout() {
     items: [
       { key: 'profile', icon: <UserOutlined />, label: '个人中心', onClick: () => navigate('/me') },
       { key: 'teams', icon: <TeamOutlined />, label: '我的战队', onClick: () => navigate('/teams') },
-      ...(user && (user as any).role === 1 ? [{ key: 'admin', icon: <SettingOutlined />, label: '管理后台', onClick: () => navigate('/admin') }] : []),
+      ...(user && (user as any).role >= 1 ? [{ key: 'admin', icon: <SettingOutlined />, label: '管理后台', onClick: () => navigate('/admin') }] : []),
       { type: 'divider' as const },
       { key: 'logout', icon: <LogoutOutlined />, label: '退出登录', onClick: handleLogout },
     ],

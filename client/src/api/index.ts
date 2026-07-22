@@ -9,11 +9,14 @@ export const authApi = {
   getMe: () => api.get('/users/me'),
   updateProfile: (data: any) => api.put('/users/me', data),
   getUser: (id: string) => api.get(`/users/${id}`),
+  unbindWechat: () => api.post('/users/me/unbindWechat'),
   // Admin
   adminGetUsers: () => api.get('/users/admin/users'),
   adminDeleteUser: (id: string) => api.delete(`/users/admin/users/${id}`),
   adminResetPassword: (id: string, password: string) => api.put(`/users/admin/users/${id}/password`, { password }),
   adminUpdateStatus: (id: string, status: string) => api.put(`/users/admin/users/${id}/status`, { status }),
+  adminUnbindWechat: (id: string) => api.put(`/users/admin/users/${id}/unbindWechat`),
+  adminUpdateRole: (id: string, role: number) => api.put(`/users/admin/users/${id}/role`, { role }),
 };
 
 export const tournamentApi = {

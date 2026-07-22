@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react';
-import { Card, Form, Input, Button, Select, message, Table, Tag, Upload, Image } from 'antd';
+import { Card, Form, Input, Button, Select, message, Table, Tag, Upload, Image, Modal } from 'antd';
 import { UploadOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useAuthStore } from '../store';
 import { authApi, playerApi, tournamentApi } from '../api';
 
 export function ProfilePage() {
-  const { user, setUser } = useAuthStore();
+  const { user, setUser, fetchUser } = useAuthStore();
   const [tournaments, setTournaments] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [photos, setPhotos] = useState<string[]>(user?.player_photos || []);
+  const [unbinding, setUnbinding] = useState(false);
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -67,6 +68,26 @@ export function ProfilePage() {
 
   const removePhoto = (index: number) => {
     setPhotos(photos.filter((_, i) => i !== index));
+  };
+
+  const handleUnbindWechat = () => {
+    Modal.confirm({
+      title: '解绑微信',
+      content: '解绑后，该微信将无法直接登录当前账号。如需再次使用微信登录，需重新绑定。确定要解绑吗？',
+      okText: '确认解绑',
+      cancelText: '取消',
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        setUnbinding(true);
+        try {
+          await authApi.unbindWechat();
+          message.success('微信解绑成功');
+          await fetchUser();
+        } catch (err: any) {
+          message.error(err.response?.data?.message || '解绑失败');
+        } finally { setUnbinding(false); }
+      },
+    });
   };
 
   const statusMap: Record<string, { label: string; color: string }> = {
@@ -150,6 +171,27 @@ export function ProfilePage() {
 
           <Button type="primary" htmlType="submit" loading={loading}>保存</Button>
         </Form>
+      </Card>
+
+      <Card title="微信绑定" style={{ borderRadius: 12, marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            {user?.wechat_union_id ? (
+              <>
+                <Tag color="green">已绑定</Tag>
+                <span style={{ marginLeft: 8, color: '#666' }}>当前账号已绑定微信，可通过微信直接登录</span>
+              </>
+            ) : (
+              <>
+                <Tag color="default">未绑定</Tag>
+                <span style={{ marginLeft: 8, color: '#666' }}>未绑定微信，请在小程序端进行绑定</span>
+              </>
+            )}
+          </div>
+          {user?.wechat_union_id && (
+            <Button danger loading={unbinding} onClick={handleUnbindWechat}>解绑微信</Button>
+          )}
+        </div>
       </Card>
 
       <Card title="我创建的赛事" style={{ borderRadius: 12 }}>
