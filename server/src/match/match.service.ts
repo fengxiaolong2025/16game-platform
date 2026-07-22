@@ -169,7 +169,8 @@ export class MatchService {
         scoreA: m.score_a,
         scoreB: m.score_b,
       }));
-      const rankings = this.bracketEngine.calculateRoundRobinRankings(participants, matchResults);
+      const scoring = tournament.config?.scoring || { win: 3, draw: 1, loss: 0 };
+      const rankings = this.bracketEngine.calculateRoundRobinRankings(participants, matchResults, scoring);
       await this.rankingService.saveRankings(tournamentId, rankings);
     } else {
       // Elimination ranking with win/loss stats
@@ -214,7 +215,7 @@ export class MatchService {
           participantId: championId,
           participantName: participantMap.get(championId)!,
           rank: 1,
-          score: s.wins * scoring.win + s.losses * scoring.loss,
+          score: s.scoreFor * scoring.win + s.scoreAgainst * scoring.loss,
           wins: s.wins, losses: s.losses, draws: 0,
           scoreFor: s.scoreFor, scoreAgainst: s.scoreAgainst,
         });
@@ -232,7 +233,7 @@ export class MatchService {
             participantId: finalistId,
             participantName: participantMap.get(finalistId)!,
             rank: 2,
-            score: s.wins * scoring.win + s.losses * scoring.loss,
+            score: s.scoreFor * scoring.win + s.scoreAgainst * scoring.loss,
             wins: s.wins, losses: s.losses, draws: 0,
             scoreFor: s.scoreFor, scoreAgainst: s.scoreAgainst,
           });
@@ -255,7 +256,7 @@ export class MatchService {
                 participantId: loserId,
                 participantName: participantMap.get(loserId)!,
                 rank: 3, // shared 3rd
-                score: s.wins * scoring.win + s.losses * scoring.loss,
+                score: s.scoreFor * scoring.win + s.scoreAgainst * scoring.loss,
                 wins: s.wins, losses: s.losses, draws: 0,
                 scoreFor: s.scoreFor, scoreAgainst: s.scoreAgainst,
               });
@@ -293,7 +294,7 @@ export class MatchService {
           participantId: id,
           participantName: participantMap.get(id)!,
           rank: 0, // assigned below
-          score: s.wins * scoring.win + s.losses * scoring.loss,
+          score: s.scoreFor * scoring.win + s.scoreAgainst * scoring.loss,
           wins: s.wins, losses: s.losses, draws: 0,
           scoreFor: s.scoreFor, scoreAgainst: s.scoreAgainst,
         });

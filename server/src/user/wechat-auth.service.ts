@@ -20,7 +20,8 @@ export class WechatAuthService {
    */
   async code2Session(code: string): Promise<WechatSession> {
     const appid = this.configService.get<string>('WECHAT_APPID');
-    const secret = this.configService.get<string>('WECHAT_APPSECRET');
+    // 兼容两种变量名：WECHAT_APPSECRET 和 WECHAT_SECRET
+    const secret = this.configService.get<string>('WECHAT_APPSECRET') || this.configService.get<string>('WECHAT_SECRET');
 
     // 开发环境 mock：未配置 AppID 时方便调试
     if (!appid || !secret) {
@@ -31,6 +32,7 @@ export class WechatAuthService {
       };
     }
 
+    this.logger.log(`code2Session 调用微信API, appid: ${appid}`);
     const url = `https://api.weixin.qq.com/sns/jscode2session?appid=${appid}&secret=${secret}&js_code=${encodeURIComponent(code)}&grant_type=authorization_code`;
 
     try {
@@ -60,7 +62,7 @@ export class WechatAuthService {
    */
   async getAccessToken(): Promise<string> {
     const appid = this.configService.get<string>('WECHAT_APPID');
-    const secret = this.configService.get<string>('WECHAT_APPSECRET');
+    const secret = this.configService.get<string>('WECHAT_APPSECRET') || this.configService.get<string>('WECHAT_SECRET');
 
     if (!appid || !secret) {
       throw new UnauthorizedException('微信小程序未配置');

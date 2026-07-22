@@ -13,7 +13,7 @@ export class TeamService {
     private memberRepo: Repository<TeamMember>,
   ) {}
 
-  async create(userId: string, data: { name: string; tag?: string; logo?: string; description?: string }): Promise<Team> {
+  async create(userId: string, data: { name: string; tag?: string; logo?: string; description?: string; achievement?: string; photos?: string[] }): Promise<Team> {
     const team = this.teamRepo.create({
       ...data,
       captain_id: userId,
@@ -126,7 +126,7 @@ export class TeamService {
     await this.teamRepo.update(teamId, { member_count: () => 'MAX(member_count - 1, 0)' });
   }
 
-  async update(teamId: string, userId: string, data: { name?: string; tag?: string; logo?: string; description?: string }): Promise<Team> {
+  async update(teamId: string, userId: string, data: { name?: string; tag?: string; logo?: string; description?: string; achievement?: string; photos?: string[] }): Promise<Team> {
     const team = await this.findById(teamId);
     if (team.captain_id !== userId) throw new ForbiddenException('仅队长可编辑');
 

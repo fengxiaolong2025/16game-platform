@@ -224,7 +224,7 @@ export class BracketEngine {
           participantId,
           participantName: participant?.name || 'Unknown',
           rank: 0,
-          score: s.wins * scoring.win + s.draws * scoring.draw + s.losses * scoring.loss,
+          score: s.scoreFor * scoring.win + s.scoreAgainst * scoring.loss + s.draws * scoring.draw,
           wins: s.wins,
           losses: s.losses,
           draws: s.draws,

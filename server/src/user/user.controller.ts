@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Put, Delete, Body, Param, UseGuards, Request, HttpCode, HttpStatus, ForbiddenException, BadRequestException, UseInterceptors, UploadedFiles } from '@nestjs/common';
+import { Controller, Post, Get, Put, Delete, Body, Param, UseGuards, Request, HttpCode, HttpStatus, ForbiddenException, BadRequestException, UseInterceptors, UploadedFiles, ConflictException } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
@@ -66,13 +66,53 @@ export class UserController {
   async loginByWechat(@Body() body: { code: string; nickname?: string; avatar?: string }) {
     // 调用微信 code2Session 获取 openid/session_key
     const session = await this.wechatAuthService.code2Session(body.code);
-    // 用 unionid（跨端打通）或 openid 作为唯一标识
-    const profile = {
-      unionId: session.unionid || session.openid,
-      nickname: body.nickname || '微信用户',
-      avatar: body.avatar || '',
+    const unionId = session.unionid || session.openid;
+
+    // 检查该微信是否已绑定账号
+    const existing = await this.userService.findByWechatUnionId(unionId);
+    if (existing) {
+      // 已绑定，直接登录
+      const result = await this.userService.createOrUpdateByWechat({
+        unionId,
+        nickname: body.nickname || '微信用户',
+        avatar: body.avatar || '',
+      });
+      return { needBind: false, ...result };
+    }
+
+    // 未绑定，返回需要绑定的信息
+    return {
+      needBind: true,
+      wechatProfile: {
+        unionId,
+        nickname: body.nickname || '',
+        avatar: body.avatar || '',
+      },
     };
-    return this.userService.createOrUpdateByWechat(profile);
+  }
+
+  /**
+   * 绑定已有网页端账号（用户名/邮箱/手机号 + 密码）
+   */
+  @Post('bindWechat')
+  @HttpCode(HttpStatus.OK)
+  async bindWechat(@Body() body: { username: string; password: string; unionId: string; nickname?: string; avatar?: string }) {
+    if (!body.username || !body.password || !body.unionId) {
+      throw new BadRequestException('请填写完整信息');
+    }
+    return this.userService.bindWechatAccount(body.username, body.password, body.unionId, body.nickname, body.avatar);
+  }
+
+  /**
+   * 跳过绑定，直接用微信信息创建新用户
+   */
+  @Post('wechat/register')
+  @HttpCode(HttpStatus.OK)
+  async wechatRegister(@Body() body: { unionId: string; nickname: string; avatar?: string }) {
+    if (!body.unionId) {
+      throw new BadRequestException('缺少微信信息');
+    }
+    return this.userService.createWechatUser(body.unionId, body.nickname || '微信用户', body.avatar || '');
   }
 
   @Get('me')
@@ -83,9 +123,20 @@ export class UserController {
     return profile;
   }
 
+  /**
+   * 用户自助解绑微信
+   */
+  @Post('me/unbindWechat')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async unbindWechat(@Request() req) {
+    await this.userService.unbindWechat(req.user.id);
+    return { message: '微信解绑成功' };
+  }
+
   @Put('me')
   @UseGuards(JwtAuthGuard)
-  async updateProfile(@Request() req, @Body() body: { nickname?: string; avatar?: string; games?: string[]; game_ids?: string }) {
+  async updateProfile(@Request() req, @Body() body: { nickname?: string; avatar?: string; games?: string[]; game_ids?: string; bio?: string; position?: string; phone?: string; email?: string; ladder_score?: number; player_photos?: string[] }) {
     return this.userService.updateProfile(req.user.id, body);
   }
 
@@ -131,6 +182,31 @@ export class UserController {
     if (!isAdmin) throw new ForbiddenException('仅管理员可操作');
     await this.userService.updateUserStatus(id, body.status, req.user.id);
     return { message: '状态已更新' };
+  }
+
+  /**
+   * 管理员协助解绑用户微信
+   */
+  @Put('admin/users/:id/unbindWechat')
+  @UseGuards(JwtAuthGuard)
+  async adminUnbindWechat(@Param('id') id: string, @Request() req) {
+    const isAdmin = await this.userService.isAdmin(req.user.id);
+    if (!isAdmin) throw new ForbiddenException('仅管理员可操作');
+    await this.userService.adminUnbindWechat(id, req.user.id);
+    return { message: '微信解绑成功' };
+  }
+
+  /**
+   * 设置用户角色（仅超级管理员可操作）
+   * role: 0=普通用户, 2=二级管理员
+   */
+  @Put('admin/users/:id/role')
+  @UseGuards(JwtAuthGuard)
+  async updateUserRole(@Param('id') id: string, @Request() req, @Body() body: { role: number }) {
+    const isSuperAdmin = await this.userService.isSuperAdmin(req.user.id);
+    if (!isSuperAdmin) throw new ForbiddenException('仅超级管理员可设置用户角色');
+    await this.userService.updateUserRole(id, body.role, req.user.id);
+    return { message: '角色已更新' };
   }
 
   // Public: list featured players

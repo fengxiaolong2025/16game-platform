@@ -36,7 +36,7 @@ export class User {
   status: string;
 
   @Column({ default: 0 })
-  role: number; // 0=user, 1=admin
+  role: number; // 0=普通用户, 1=超级管理员, 2=二级管理员
 
   @CreateDateColumn({ name: 'created_at' })
   created_at: Date;
