@@ -8,11 +8,14 @@ import './index.scss'
 interface Team {
   id: string
   name: string
+  tag?: string
   logo?: string
   description?: string
   captain?: { nickname: string }
   member_count?: number
-  games?: string[]
+  achievement?: string
+  is_featured?: boolean
+  photos?: string[]
 }
 
 export default function TeamPage() {
@@ -76,10 +79,17 @@ export default function TeamPage() {
               mode="aspectFill"
             />
             <View className="team-info">
-              <Text className="team-name">{team.name}</Text>
+              <View className="team-name-row">
+                <Text className="team-name">{team.name}</Text>
+                {team.tag && <Text className="team-tag">[{team.tag}]</Text>}
+                {team.is_featured && <Text className="team-featured-tag">精选</Text>}
+              </View>
               <Text className="team-desc">
                 {team.description || '暂无简介'}
               </Text>
+              {team.achievement && (
+                <Text className="team-achievement">🏆 {team.achievement}</Text>
+              )}
               <View className="team-meta">
                 <Text className="team-meta-item">
                   👥 {team.member_count || 0}人

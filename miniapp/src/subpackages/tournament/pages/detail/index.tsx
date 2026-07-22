@@ -1,7 +1,7 @@
 import { View, Text, Button, RichText } from '@tarojs/components'
 import Taro, { useRouter, useLoad } from '@tarojs/taro'
 import { useState, useCallback } from 'react'
-import { tournamentApi, registrationApi } from '../../../../api'
+import { tournamentApi, registrationApi, rankingApi } from '../../../../api'
 import { useAuthStore } from '../../../../store/auth'
 import { formatDate, tournamentStatusMap, formatText, participantTypeMap } from '../../../../utils'
 import './index.scss'
@@ -11,6 +11,7 @@ export default function TournamentDetail() {
   const id = router.params.id
   const [tournament, setTournament] = useState<any>(null)
   const [myRegistration, setMyRegistration] = useState<any>(null)
+  const [rankings, setRankings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const user = useAuthStore((s) => s.user)
   const token = useAuthStore((s) => s.token)
@@ -29,6 +30,17 @@ export default function TournamentDetail() {
           setMyRegistration((myRes.data as any) || null)
         } catch {
           setMyRegistration(null)
+        }
+      }
+
+      // 加载排名数据（赛事进行中或已完成时）
+      const status = (res.data as any)?.status
+      if (status === 'in_progress' || status === 'completed') {
+        try {
+          const rankRes = await rankingApi.get(id)
+          setRankings((rankRes.data as any[]) || [])
+        } catch {
+          setRankings([])
         }
       }
     } catch (err) {
@@ -69,7 +81,7 @@ export default function TournamentDetail() {
   }
 
   const isCreator = user && tournament?.creator_id === user.id
-  const isAdmin = user?.role === 1
+  const isAdmin = (user?.role ?? 0) >= 1
   const canManage = isCreator || isAdmin
 
   if (loading) {
@@ -184,6 +196,39 @@ export default function TournamentDetail() {
           {myRegistration.status === 'approved' && tournament.status === 'in_progress' && (
             <Text className="reg-checkin">请按时参赛</Text>
           )}
+        </View>
+      )}
+
+      {/* 排名信息 */}
+      {rankings.length > 0 && (
+        <View className="ranking-card">
+          <Text className="ranking-title">战队排名</Text>
+          <View className="ranking-table">
+            <View className="ranking-header">
+              <Text className="col-rank">排名</Text>
+              <Text className="col-name">选手/战队</Text>
+              <Text className="col-num">胜</Text>
+              <Text className="col-num">负</Text>
+              <Text className="col-num">净胜</Text>
+              <Text className="col-num">积分</Text>
+            </View>
+            {rankings.map((r) => {
+              const diff = (r.score_for || 0) - (r.score_against || 0)
+              const medal = r.rank <= 3 ? ['🥇', '🥈', '🥉'][r.rank - 1] : null
+              return (
+                <View key={r.participant_id} className="ranking-row">
+                  <Text className="col-rank">{medal || r.rank}</Text>
+                  <Text className="col-name">{r.participant_name}</Text>
+                  <Text className="col-num">{r.wins || 0}</Text>
+                  <Text className="col-num">{r.losses || 0}</Text>
+                  <Text className="col-num" style={{ color: diff > 0 ? '#4caf50' : diff < 0 ? '#f44336' : '#999' }}>
+                    {diff > 0 ? `+${diff}` : diff}
+                  </Text>
+                  <Text className="col-num col-score">{r.score || 0}</Text>
+                </View>
+              )
+            })}
+          </View>
         </View>
       )}
 

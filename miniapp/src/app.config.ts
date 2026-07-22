@@ -49,6 +49,18 @@ export default {
         'pages/users/index',
       ],
     },
+    {
+      root: 'subpackages/profile',
+      pages: [
+        'pages/edit/index',
+      ],
+    },
+    {
+      root: 'subpackages/announcement',
+      pages: [
+        'pages/detail/index',
+      ],
+    },
   ],
   window: {
     backgroundTextStyle: 'light',

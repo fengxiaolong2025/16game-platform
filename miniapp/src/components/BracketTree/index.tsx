@@ -1,5 +1,6 @@
 import { View, Text, ScrollView } from '@tarojs/components'
 import { useMemo } from 'react'
+import { formatDate } from '../../utils'
 import './index.scss'
 
 // ====== 类型定义（与后端 bracket.entity.ts 对应）======
@@ -124,7 +125,7 @@ function EliminationView({ rounds, matchMap, startRound, onMatchClick }) {
               <Text className="round-name">{round.name}</Text>
               <View className="round-matches">
                 {round.matches.map((match: MatchSlot, matchIdx: number) => {
-                  const result = matchMap.get(`${actualRound}-${match.position}`) || null
+                  const result = matchMap.get(`${actualRound + 1}-${match.position}`) || null
                   return (
                     <MatchCard
                       key={match.id || matchIdx}
@@ -172,6 +173,12 @@ function MatchCard({ slot, result, onClick }) {
         <Text className="slot-name">{b?.name || '待定'}</Text>
         <Text className="slot-score">{isCompleted ? result?.score_b ?? '-' : ''}</Text>
       </View>
+      {/* 比赛时间 */}
+      {result?.scheduled_at && (
+        <View className="match-time">
+          <Text className="time-text">{formatDate(result.scheduled_at, 'MM-DD HH:mm')}</Text>
+        </View>
+      )}
     </View>
   )
 }
@@ -184,7 +191,7 @@ function RoundRobinView({ rounds, matchMap, onMatchClick }) {
         <View key={roundIdx} className="rr-round">
           <Text className="rr-round-name">{round.name}</Text>
           {round.matches.map((match: MatchSlot, matchIdx: number) => {
-            const result = matchMap.get(`${roundIdx}-${match.position}`) || null
+            const result = matchMap.get(`${roundIdx + 1}-${match.position}`) || null
             const isCompleted = result?.status === 'completed'
             return (
               <View
@@ -205,6 +212,11 @@ function RoundRobinView({ rounds, matchMap, onMatchClick }) {
                     {match.participant_b?.name || '待定'}
                   </Text>
                 </View>
+                {result?.scheduled_at && (
+                  <View className="rr-time">
+                    <Text className="rr-time-text">{formatDate(result.scheduled_at, 'MM-DD HH:mm')}</Text>
+                  </View>
+                )}
               </View>
             )
           })}

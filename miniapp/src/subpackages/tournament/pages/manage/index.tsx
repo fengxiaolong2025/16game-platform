@@ -1,7 +1,7 @@
-import { View, Text, Button, ScrollView } from '@tarojs/components'
+import { View, Text, Button, ScrollView, Picker } from '@tarojs/components'
 import Taro, { useRouter, useLoad } from '@tarojs/taro'
 import { useState, useCallback } from 'react'
-import { tournamentApi, registrationApi, bracketApi } from '../../../../api'
+import { tournamentApi, registrationApi, bracketApi, matchApi } from '../../../../api'
 import { useAuthStore } from '../../../../store/auth'
 import { formatDate, tournamentStatusMap, formatText, participantTypeMap } from '../../../../utils'
 import './index.scss'
@@ -30,20 +30,29 @@ export default function ManageTournament() {
 
   const [tournament, setTournament] = useState<any>(null)
   const [registrations, setRegistrations] = useState<any[]>([])
+  const [matches, setMatches] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'all' | 'submitted' | 'approved' | 'rejected'>('all')
+  const [resultModal, setResultModal] = useState<{ open: boolean; match: any; isEdit: boolean }>({ open: false, match: null, isEdit: false })
+  const [scoreA, setScoreA] = useState(0)
+  const [scoreB, setScoreB] = useState(0)
+  const [scheduleModal, setScheduleModal] = useState<{ open: boolean; match: any }>({ open: false, match: null })
+  const [scheduleDate, setScheduleDate] = useState<string>('')
 
   const fetchData = useCallback(async () => {
     if (!id) return
     try {
       setLoading(true)
-      const [tourRes, regRes] = await Promise.all([
+      const [tourRes, regRes, matchRes] = await Promise.all([
         tournamentApi.get(id),
         token ? registrationApi.list(id) : Promise.resolve({ data: [] }),
+        matchApi.list(id).catch(() => ({ data: [] })),
       ])
       setTournament(tourRes.data as any)
       const regData = (regRes.data as any)?.items || (regRes.data as any) || []
       setRegistrations(regData)
+      const matchData = (matchRes.data as any) || []
+      setMatches(Array.isArray(matchData) ? matchData : matchData.items || [])
     } catch (err) {
       console.error('加载数据失败', err)
       Taro.showToast({ title: '加载失败', icon: 'none' })
@@ -57,7 +66,7 @@ export default function ManageTournament() {
   })
 
   const isCreator = user && tournament?.creator_id === user.id
-  const isAdmin = user?.role === 1
+  const isAdmin = (user?.role ?? 0) >= 1
   const canManage = isCreator || isAdmin
 
   const handleAdvance = (nextStatus: string) => {
@@ -156,6 +165,67 @@ export default function ManageTournament() {
           setTimeout(() => Taro.navigateBack(), 1500)
         } catch (err: any) {
           Taro.showToast({ title: err?.data?.message || '删除失败', icon: 'none' })
+        }
+      },
+    })
+  }
+
+  const openResultModal = (match: any, isEdit: boolean) => {
+    setResultModal({ open: true, match, isEdit })
+    setScoreA(match.score_a || 0)
+    setScoreB(match.score_b || 0)
+  }
+
+  const handleSubmitResult = async () => {
+    if (!resultModal.match) return
+    const match = resultModal.match
+    const winnerId = scoreA > scoreB ? match.participant_a_id : scoreB > scoreA ? match.participant_b_id : null
+    try {
+      await matchApi.submitResult(id, match.id, { score_a: scoreA, score_b: scoreB, winner_id: winnerId })
+      Taro.showToast({ title: resultModal.isEdit ? '结果已更新' : '结果已提交', icon: 'success' })
+      setResultModal({ open: false, match: null, isEdit: false })
+      fetchData()
+    } catch (err: any) {
+      Taro.showToast({ title: err?.data?.message || '提交失败', icon: 'none' })
+    }
+  }
+
+  const openScheduleModal = (match: any) => {
+    setScheduleModal({ open: true, match })
+    setScheduleDate(match.scheduled_at ? match.scheduled_at : '')
+  }
+
+  const handleSchedule = async () => {
+    if (!scheduleModal.match || !scheduleDate) {
+      Taro.showToast({ title: '请选择时间', icon: 'none' })
+      return
+    }
+    try {
+      const isoDate = new Date(scheduleDate).toISOString()
+      await matchApi.schedule(id, scheduleModal.match.id, isoDate)
+      Taro.showToast({ title: '时间已设置', icon: 'success' })
+      setScheduleModal({ open: false, match: null })
+      setScheduleDate('')
+      fetchData()
+    } catch (err: any) {
+      Taro.showToast({ title: err?.data?.message || '设置失败', icon: 'none' })
+    }
+  }
+
+  const handleResetMatch = (match: any) => {
+    Taro.showModal({
+      title: '重置比赛',
+      content: `确认重置 ${match.participant_a_name} VS ${match.participant_b_name} 的比赛结果？`,
+      confirmColor: '#ff9800',
+      success: async (res) => {
+        if (!res.confirm) return
+        try {
+          await matchApi.submitResult(id, match.id, { score_a: 0, score_b: 0, winner_id: null })
+          await matchApi.updateStatus(id, match.id, 'pending')
+          Taro.showToast({ title: '已重置', icon: 'success' })
+          fetchData()
+        } catch (err: any) {
+          Taro.showToast({ title: err?.data?.message || '重置失败', icon: 'none' })
         }
       },
     })
@@ -330,12 +400,157 @@ export default function ManageTournament() {
         )}
       </View>
 
+      {/* 比赛管理 */}
+      {matches.length > 0 && (
+        <View className="match-section">
+          <Text className="card-title">比赛管理（共 {matches.length} 场）</Text>
+          <View className="match-list">
+            {matches.map((m) => {
+              const isCompleted = m.status === 'completed'
+              const isLive = m.status === 'live'
+              const hasParticipants = m.participant_a_id && m.participant_b_id
+              const aWin = isCompleted && m.winner_id === m.participant_a_id
+              const bWin = isCompleted && m.winner_id === m.participant_b_id
+              return (
+                <View key={m.id} className="match-card">
+                  <View className="match-card-header">
+                    <Text className="match-round">第{m.round}轮</Text>
+                    <Text className={`match-status ${isCompleted ? 'completed' : isLive ? 'live' : 'pending'}`}>
+                      {isCompleted ? '已结束' : isLive ? '进行中' : '待开始'}
+                    </Text>
+                  </View>
+                  <View className="match-teams">
+                    <View className={`match-team ${aWin ? 'win' : ''}`}>
+                      <Text className="team-name">{m.participant_a_name || '待定'}</Text>
+                      <Text className="team-score">{isCompleted ? m.score_a ?? '-' : ''}</Text>
+                    </View>
+                    <Text className="match-vs">VS</Text>
+                    <View className={`match-team ${bWin ? 'win' : ''}`}>
+                      <Text className="team-score">{isCompleted ? m.score_b ?? '-' : ''}</Text>
+                      <Text className="team-name">{m.participant_b_name || '待定'}</Text>
+                    </View>
+                  </View>
+                  <View className="match-card-footer">
+                    <Text className="match-time">{m.scheduled_at ? formatDate(m.scheduled_at, 'MM-DD HH:mm') : '时间未设置'}</Text>
+                    {hasParticipants && (
+                      <View className="match-actions">
+                        <Button
+                          className="action-btn schedule-btn"
+                          size="mini"
+                          onClick={() => openScheduleModal(m)}
+                        >
+                          时间
+                        </Button>
+                        {isCompleted ? (
+                          <>
+                            <Button
+                              className="action-btn edit-btn"
+                              size="mini"
+                              onClick={() => openResultModal(m, true)}
+                            >
+                              修改
+                            </Button>
+                            <Button
+                              className="action-btn reset-btn"
+                              size="mini"
+                              onClick={() => handleResetMatch(m)}
+                            >
+                              重置
+                            </Button>
+                          </>
+                        ) : (
+                          <Button
+                            className="action-btn submit-btn"
+                            size="mini"
+                            type="primary"
+                            onClick={() => openResultModal(m, false)}
+                          >
+                            录入
+                          </Button>
+                        )}
+                      </View>
+                    )}
+                  </View>
+                </View>
+              )
+            })}
+          </View>
+        </View>
+      )}
+
       {/* 危险操作 */}
       {tournament.status === 'draft' && (
         <View className="danger-zone">
           <Button className="danger-btn" onClick={handleDelete}>
             删除赛事
           </Button>
+        </View>
+      )}
+
+      {/* 比分录入弹窗 */}
+      {resultModal.open && resultModal.match && (
+        <View className="modal-mask" onClick={() => setResultModal({ open: false, match: null, isEdit: false })}>
+          <View className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <Text className="modal-title">{resultModal.isEdit ? '修改比赛结果' : '录入比赛结果'}</Text>
+            <Text className="modal-subtitle">第{resultModal.match.round}轮</Text>
+            <View className="score-input-area">
+              <View className="score-side">
+                <Text className="score-team-name">{resultModal.match.participant_a_name}</Text>
+                <View className="score-controls">
+                  <Button className="score-btn" onClick={() => setScoreA(Math.max(0, scoreA - 1))}>-</Button>
+                  <Text className="score-value">{scoreA}</Text>
+                  <Button className="score-btn" onClick={() => setScoreA(scoreA + 1)}>+</Button>
+                </View>
+              </View>
+              <Text className="score-vs">VS</Text>
+              <View className="score-side">
+                <Text className="score-team-name">{resultModal.match.participant_b_name}</Text>
+                <View className="score-controls">
+                  <Button className="score-btn" onClick={() => setScoreB(Math.max(0, scoreB - 1))}>-</Button>
+                  <Text className="score-value">{scoreB}</Text>
+                  <Button className="score-btn" onClick={() => setScoreB(scoreB + 1)}>+</Button>
+                </View>
+              </View>
+            </View>
+            <View className="modal-actions">
+              <Button className="modal-cancel" onClick={() => setResultModal({ open: false, match: null, isEdit: false })}>取消</Button>
+              <Button className="modal-confirm" type="primary" onClick={handleSubmitResult}>
+                {resultModal.isEdit ? '保存修改' : '确认提交'}
+              </Button>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {/* 时间设置弹窗 */}
+      {scheduleModal.open && scheduleModal.match && (
+        <View className="modal-mask" onClick={() => { setScheduleModal({ open: false, match: null }); setScheduleDate('') }}>
+          <View className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <Text className="modal-title">设置比赛时间</Text>
+            <Text className="modal-subtitle">
+              {scheduleModal.match.participant_a_name} VS {scheduleModal.match.participant_b_name}
+            </Text>
+            {scheduleModal.match.scheduled_at && (
+              <Text className="modal-current-time">
+                当前时间：{formatDate(scheduleModal.match.scheduled_at, 'YYYY-MM-DD HH:mm')}
+              </Text>
+            )}
+            <Picker
+              mode="dateTime"
+              value={scheduleDate || new Date().toISOString()}
+              onChange={(e) => setScheduleDate(e.detail.value)}
+            >
+              <View className="picker-display">
+                <Text className="picker-text">
+                  {scheduleDate ? formatDate(scheduleDate, 'YYYY-MM-DD HH:mm') : '点击选择时间'}
+                </Text>
+              </View>
+            </Picker>
+            <View className="modal-actions">
+              <Button className="modal-cancel" onClick={() => { setScheduleModal({ open: false, match: null }); setScheduleDate('') }}>取消</Button>
+              <Button className="modal-confirm" type="primary" onClick={handleSchedule}>保存时间</Button>
+            </View>
+          </View>
         </View>
       )}
     </View>

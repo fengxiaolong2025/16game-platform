@@ -39,7 +39,7 @@ export default function CreateTournament() {
   })
 
   useLoad(() => {
-    if (user?.role !== 1) {
+    if (!user || (user.role ?? 0) < 1) {
       Taro.showToast({ title: '仅管理员可创建赛事', icon: 'none' })
       setTimeout(() => Taro.navigateBack(), 1500)
     }

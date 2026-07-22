@@ -32,7 +32,7 @@ export default function UsersManage() {
   }, [])
 
   useLoad(() => {
-    if (currentUser?.role !== 1) {
+    if (!currentUser || (currentUser.role ?? 0) < 1) {
       Taro.showToast({ title: '仅管理员可访问', icon: 'none' })
       setTimeout(() => Taro.navigateBack(), 1500)
       return
@@ -99,6 +99,44 @@ export default function UsersManage() {
     })
   }
 
+  const handleUnbindWechat = (userId: string, nickname: string) => {
+    Taro.showModal({
+      title: '解绑微信',
+      content: `确认解绑用户 ${nickname} 的微信？解绑后该微信将无法直接登录此账号。`,
+      confirmText: '确认解绑',
+      confirmColor: '#f44336',
+      success: async (res) => {
+        if (!res.confirm) return
+        try {
+          await authApi.adminUnbindWechat(userId)
+          Taro.showToast({ title: '微信解绑成功', icon: 'success' })
+          fetchData()
+        } catch (err: any) {
+          Taro.showToast({ title: err?.data?.message || '解绑失败', icon: 'none' })
+        }
+      },
+    })
+  }
+
+  const handleUpdateRole = (userId: string, nickname: string, currentRole: number) => {
+    const newRole = currentRole === 2 ? 0 : 2
+    const action = newRole === 2 ? '设为二级管理员' : '取消二级管理员'
+    Taro.showModal({
+      title: action,
+      content: `确认将用户 ${nickname} ${action}？`,
+      success: async (res) => {
+        if (!res.confirm) return
+        try {
+          await authApi.adminUpdateRole(userId, newRole)
+          Taro.showToast({ title: '操作成功', icon: 'success' })
+          fetchData()
+        } catch (err: any) {
+          Taro.showToast({ title: err?.data?.message || '操作失败', icon: 'none' })
+        }
+      },
+    })
+  }
+
   const filteredUsers = searchKeyword
     ? users.filter((u) =>
         u.nickname?.toLowerCase().includes(searchKeyword.toLowerCase()) ||
@@ -142,7 +180,8 @@ export default function UsersManage() {
                 <View className="user-info">
                   <View className="user-name-row">
                     <Text className="user-name">{u.nickname || '未设置'}</Text>
-                    {u.role === 1 && <Text className="admin-tag">管理员</Text>}
+                    {u.role === 1 && <Text className="admin-tag">超级管理员</Text>}
+                    {u.role === 2 && <Text className="sub-admin-tag">二级管理员</Text>}
                     {isSelf && <Text className="self-tag">本人</Text>}
                   </View>
                   <Text className="user-detail">
@@ -152,13 +191,27 @@ export default function UsersManage() {
                     <Text className="tag" style={{ background: `${statusMeta.color}15`, color: statusMeta.color }}>
                       {statusMeta.text}
                     </Text>
+                    {u.wechat_union_id && (
+                      <Text className="tag" style={{ background: '#e8f5e9', color: '#4caf50' }}>
+                        微信已绑定
+                      </Text>
+                    )}
                     <Text className="meta-text">注册: {formatDate(u.created_at)}</Text>
                   </View>
                 </View>
               </View>
 
-              {!isSelf && (
+              {!isSelf && u.role !== 1 && (
                 <View className="user-actions">
+                  {u.wechat_union_id && (
+                    <Button
+                      className="action-btn"
+                      size="mini"
+                      onClick={() => handleUnbindWechat(u.id, u.nickname || '该用户')}
+                    >
+                      解绑微信
+                    </Button>
+                  )}
                   <Button
                     className="action-btn"
                     size="mini"
@@ -173,6 +226,15 @@ export default function UsersManage() {
                   >
                     重置密码
                   </Button>
+                  {currentUser?.role === 1 && (u.role === 0 || u.role === 2) && (
+                    <Button
+                      className="action-btn role-btn"
+                      size="mini"
+                      onClick={() => handleUpdateRole(u.id, u.nickname || '该用户', u.role)}
+                    >
+                      {u.role === 2 ? '取消二级管理员' : '设为二级管理员'}
+                    </Button>
+                  )}
                   <Button
                     className="action-btn danger-btn"
                     size="mini"

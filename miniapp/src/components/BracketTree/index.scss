@@ -135,6 +135,19 @@
   background: #f0f0f0;
 }
 
+/* 比赛时间 */
+.match-time {
+  padding: 8rpx 16rpx;
+  background: #f8f9fa;
+  text-align: center;
+  border-top: 1rpx solid #f0f0f0;
+}
+
+.time-text {
+  font-size: 20rpx;
+  color: #999;
+}
+
 /* 双淘汰 */
 .bracket-double {
   padding: 24rpx 0;
@@ -171,6 +184,7 @@
 
 .rr-match {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   background: #fff;
   border-radius: 12rpx;
@@ -224,4 +238,17 @@
   font-size: 22rpx;
   color: #ccc;
   padding: 0 16rpx;
+}
+
+.rr-time {
+  width: 100%;
+  text-align: center;
+  margin-top: 8rpx;
+  padding-top: 8rpx;
+  border-top: 1rpx solid #f0f0f0;
+}
+
+.rr-time-text {
+  font-size: 22rpx;
+  color: #999;
 }

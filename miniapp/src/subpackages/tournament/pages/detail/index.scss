@@ -123,6 +123,85 @@
   margin-top: 8rpx;
 }
 
+/* 排名卡片 */
+.ranking-card {
+  background: #fff;
+  margin: 24rpx;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+}
+
+.ranking-title {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin-bottom: 16rpx;
+}
+
+.ranking-table {
+  width: 100%;
+}
+
+.ranking-header {
+  display: flex;
+  align-items: center;
+  padding: 16rpx 0;
+  border-bottom: 2rpx solid #eee;
+}
+
+.ranking-row {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #f5f5f5;
+}
+
+.ranking-row:last-child {
+  border-bottom: none;
+}
+
+.col-rank {
+  width: 80rpx;
+  text-align: center;
+  font-size: 28rpx;
+  color: #666;
+  flex-shrink: 0;
+}
+
+.col-name {
+  flex: 1;
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 500;
+  padding-right: 8rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.col-num {
+  width: 80rpx;
+  text-align: center;
+  font-size: 28rpx;
+  color: #666;
+  flex-shrink: 0;
+}
+
+.col-score {
+  font-weight: 700;
+  color: #e94560;
+}
+
+.ranking-header .col-rank,
+.ranking-header .col-name,
+.ranking-header .col-num {
+  font-size: 24rpx;
+  color: #999;
+  font-weight: 500;
+}
+
 /* 操作栏 */
 .action-bar {
   position: fixed;

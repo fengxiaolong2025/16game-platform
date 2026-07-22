@@ -295,3 +295,60 @@
     font-size: 28rpx;
   }
 }
+
+/* 照片网格 */
+.photo-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.photo-item-wrap {
+  position: relative;
+  width: 160rpx;
+  height: 160rpx;
+}
+
+.photo-item {
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 12rpx;
+}
+
+.photo-remove {
+  position: absolute;
+  top: -10rpx;
+  right: -10rpx;
+  width: 36rpx;
+  height: 36rpx;
+  line-height: 36rpx;
+  text-align: center;
+  background: #f44336;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 22rpx;
+  z-index: 1;
+}
+
+.photo-add {
+  width: 160rpx;
+  height: 160rpx;
+  background: #f8f9fb;
+  border: 2rpx dashed #ccc;
+  border-radius: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .photo-add-icon {
+    font-size: 48rpx;
+    color: #ccc;
+  }
+}
+
+.member-game-id {
+  font-size: 22rpx;
+  color: #999;
+  display: block;
+  margin-top: 4rpx;
+}

@@ -34,7 +34,7 @@ export default function AnnouncementManage() {
   }, [])
 
   useLoad(() => {
-    if (user?.role !== 1) {
+    if (!user || (user.role ?? 0) < 1) {
       Taro.showToast({ title: '仅管理员可访问', icon: 'none' })
       setTimeout(() => Taro.navigateBack(), 1500)
       return

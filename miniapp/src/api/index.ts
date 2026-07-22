@@ -4,6 +4,10 @@ import http from './request'
 export const authApi = {
   loginByWechat: (code: string, nickname?: string, avatar?: string) =>
     http.post('/users/login/wechat', { code, nickname, avatar }),
+  bindWechat: (username: string, password: string, unionId: string, nickname?: string, avatar?: string) =>
+    http.post('/users/bindWechat', { username, password, unionId, nickname, avatar }),
+  wechatRegister: (unionId: string, nickname: string, avatar?: string) =>
+    http.post('/users/wechat/register', { unionId, nickname, avatar }),
   loginByPhone: (phone: string) =>
     http.post('/users/login/phone', { phone, code: '000000' }),
   loginByEmail: (email: string, password: string) =>
@@ -17,6 +21,7 @@ export const authApi = {
   getMe: () => http.get('/users/me'),
   updateProfile: (data: any) => http.put('/users/me', data),
   getUser: (id: string) => http.get(`/users/${id}`),
+  unbindWechat: () => http.post('/users/me/unbindWechat'),
   // Admin
   adminGetUsers: () => http.get('/users/admin/users'),
   adminDeleteUser: (id: string) => http.delete(`/users/admin/users/${id}`),
@@ -24,6 +29,10 @@ export const authApi = {
     http.put(`/users/admin/users/${id}/password`, { password }),
   adminUpdateStatus: (id: string, status: string) =>
     http.put(`/users/admin/users/${id}/status`, { status }),
+  adminUnbindWechat: (id: string) =>
+    http.put(`/users/admin/users/${id}/unbindWechat`),
+  adminUpdateRole: (id: string, role: number) =>
+    http.put(`/users/admin/users/${id}/role`, { role }),
 }
 
 // ==================== 赛事 API ====================

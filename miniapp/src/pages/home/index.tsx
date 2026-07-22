@@ -88,7 +88,7 @@ export default function Home() {
 
   const goToCreate = () => {
     const role = user?.role
-    if (role !== 1) {
+    if ((role ?? 0) < 1) {
       Taro.showToast({ title: '仅管理员可创建赛事', icon: 'none' })
       return
     }
@@ -142,7 +142,7 @@ export default function Home() {
               <Text
                 key={ann.id}
                 className="announce-item"
-                onClick={() => Taro.navigateTo({ url: `/subpackages/admin/pages/announcement/index?id=${ann.id}` })}
+                onClick={() => Taro.navigateTo({ url: `/subpackages/announcement/pages/detail/index?id=${ann.id}` })}
               >
                 {ann.is_pinned ? '【置顶】' : ''}{ann.title}
               </Text>

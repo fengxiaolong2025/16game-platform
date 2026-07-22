@@ -78,7 +78,8 @@ export default function UserPage() {
         <View className="user-info">
           <View className="user-name-row">
             <Text className="user-name">{user.nickname || '未设置'}</Text>
-            {user.role === 1 && <Text className="admin-tag">管理员</Text>}
+            {user.role === 1 && <Text className="admin-tag">超级管理员</Text>}
+            {user.role === 2 && <Text className="admin-tag" style={{ background: '#fff3e0', color: '#ff9800' }}>二级管理员</Text>}
           </View>
           {user.bio && <Text className="user-bio">{user.bio}</Text>}
           <View className="user-tags">

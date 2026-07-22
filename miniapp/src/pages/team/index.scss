@@ -50,18 +50,49 @@
   overflow: hidden;
 }
 
+.team-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-bottom: 4rpx;
+}
+
 .team-name {
-  display: block;
   font-size: 30rpx;
   font-weight: 600;
   color: #1a1a2e;
-  margin-bottom: 4rpx;
+}
+
+.team-tag {
+  font-size: 22rpx;
+  color: #667eea;
+  background: #e8eaf6;
+  padding: 2rpx 12rpx;
+  border-radius: 8rpx;
+}
+
+.team-featured-tag {
+  font-size: 20rpx;
+  color: #fff;
+  background: #faad14;
+  padding: 2rpx 12rpx;
+  border-radius: 8rpx;
 }
 
 .team-desc {
   display: block;
   font-size: 24rpx;
   color: #999;
+  margin-bottom: 8rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.team-achievement {
+  display: block;
+  font-size: 24rpx;
+  color: #fa8c16;
   margin-bottom: 8rpx;
   overflow: hidden;
   text-overflow: ellipsis;

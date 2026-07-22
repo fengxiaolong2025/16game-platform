@@ -25,8 +25,10 @@ export default function TeamManage() {
     name: '',
     tag: '',
     description: '',
+    achievement: '',
     logo: '',
   })
+  const [createPhotos, setCreatePhotos] = useState<string[]>([])
   const [creating, setCreating] = useState(false)
 
   // 编辑表单
@@ -36,6 +38,7 @@ export default function TeamManage() {
     description: '',
     achievement: '',
   })
+  const [editPhotos, setEditPhotos] = useState<string[]>([])
   const [editing, setEditing] = useState(false)
 
   const fetchMyTeams = useCallback(async () => {
@@ -69,6 +72,7 @@ export default function TeamManage() {
         description: teamData.description || '',
         achievement: teamData.achievement || '',
       })
+      setEditPhotos(teamData.photos || [])
       const memberData = (memberRes.data as any)?.items || (memberRes.data as any) || []
       setMembers(memberData)
     } catch (err) {
@@ -93,11 +97,14 @@ export default function TeamManage() {
       const data: any = { name: createForm.name.trim() }
       if (createForm.tag) data.tag = createForm.tag.trim()
       if (createForm.description) data.description = createForm.description
+      if (createForm.achievement) data.achievement = createForm.achievement
       if (createForm.logo) data.logo = createForm.logo
+      if (createPhotos.length > 0) data.photos = createPhotos
 
       await teamApi.create(data)
       Taro.showToast({ title: '创建成功', icon: 'success' })
-      setCreateForm({ name: '', tag: '', description: '', logo: '' })
+      setCreateForm({ name: '', tag: '', description: '', achievement: '', logo: '' })
+      setCreatePhotos([])
       await fetchMyTeams()
       setActiveTab('manage')
     } catch (err: any) {
@@ -118,6 +125,46 @@ export default function TeamManage() {
       if (urls.length > 0) {
         setCreateForm({ ...createForm, logo: urls[0] })
       }
+    } catch (err) {
+      Taro.hideLoading()
+      console.error('上传失败', err)
+    }
+  }
+
+  // 上传战队照片（创建表单）
+  const handleUploadCreatePhoto = async () => {
+    if (createPhotos.length >= 6) {
+      Taro.showToast({ title: '最多上传6张照片', icon: 'none' })
+      return
+    }
+    try {
+      const res = await Taro.chooseImage({ count: 6 - createPhotos.length, sizeType: ['compressed'] })
+      Taro.showLoading({ title: '上传中...' })
+      const uploadPromises = res.tempFilePaths.map((fp) => http.upload('/teams/upload', fp, 'images'))
+      const results = await Promise.all(uploadPromises)
+      Taro.hideLoading()
+      const newUrls = results.flatMap((r) => (r.data as any)?.urls || [])
+      setCreatePhotos([...createPhotos, ...newUrls])
+    } catch (err) {
+      Taro.hideLoading()
+      console.error('上传失败', err)
+    }
+  }
+
+  // 上传战队照片（编辑表单）
+  const handleUploadEditPhoto = async () => {
+    if (editPhotos.length >= 6) {
+      Taro.showToast({ title: '最多上传6张照片', icon: 'none' })
+      return
+    }
+    try {
+      const res = await Taro.chooseImage({ count: 6 - editPhotos.length, sizeType: ['compressed'] })
+      Taro.showLoading({ title: '上传中...' })
+      const uploadPromises = res.tempFilePaths.map((fp) => http.upload('/teams/upload', fp, 'images'))
+      const results = await Promise.all(uploadPromises)
+      Taro.hideLoading()
+      const newUrls = results.flatMap((r) => (r.data as any)?.urls || [])
+      setEditPhotos([...editPhotos, ...newUrls])
     } catch (err) {
       Taro.hideLoading()
       console.error('上传失败', err)
@@ -161,6 +208,7 @@ export default function TeamManage() {
         tag: editForm.tag.trim(),
         description: editForm.description,
         achievement: editForm.achievement,
+        photos: editPhotos,
       })
       Taro.showToast({ title: '保存成功', icon: 'success' })
       loadTeamDetail(selectedTeamId)
@@ -268,6 +316,41 @@ export default function TeamManage() {
                 autoHeight
               />
             </View>
+
+            <View className="form-item">
+              <Text className="form-label">战队成就</Text>
+              <Input
+                className="form-input"
+                placeholder="如：2026春季赛冠军"
+                value={createForm.achievement}
+                onInput={(e) => setCreateForm({ ...createForm, achievement: e.detail.value })}
+                maxlength={100}
+              />
+            </View>
+
+            <View className="form-item">
+              <Text className="form-label">战队照片（最多6张）</Text>
+              <View className="photo-grid">
+                {createPhotos.map((photo, idx) => (
+                  <View key={idx} className="photo-item-wrap">
+                    <Image
+                      className="photo-item"
+                      src={toAbsUrl(photo)}
+                      mode="aspectFill"
+                    />
+                    <Text
+                      className="photo-remove"
+                      onClick={() => setCreatePhotos(createPhotos.filter((_, i) => i !== idx))}
+                    >✕</Text>
+                  </View>
+                ))}
+                {createPhotos.length < 6 && (
+                  <View className="photo-add" onClick={handleUploadCreatePhoto}>
+                    <Text className="photo-add-icon">+</Text>
+                  </View>
+                )}
+              </View>
+            </View>
           </View>
 
           <Button
@@ -348,6 +431,29 @@ export default function TeamManage() {
                         autoHeight
                       />
                     </View>
+                    <View className="form-item">
+                      <Text className="form-label">战队照片（最多6张）</Text>
+                      <View className="photo-grid">
+                        {editPhotos.map((photo, idx) => (
+                          <View key={idx} className="photo-item-wrap">
+                            <Image
+                              className="photo-item"
+                              src={toAbsUrl(photo)}
+                              mode="aspectFill"
+                            />
+                            <Text
+                              className="photo-remove"
+                              onClick={() => setEditPhotos(editPhotos.filter((_, i) => i !== idx))}
+                            >✕</Text>
+                          </View>
+                        ))}
+                        {editPhotos.length < 6 && (
+                          <View className="photo-add" onClick={handleUploadEditPhoto}>
+                            <Text className="photo-add-icon">+</Text>
+                          </View>
+                        )}
+                      </View>
+                    </View>
                     <Button
                       className="btn-primary save-btn"
                       loading={editing}
@@ -369,7 +475,10 @@ export default function TeamManage() {
                             src={toAbsUrl(m.user?.avatar) || 'https://via.placeholder.com/64'}
                             mode="aspectFill"
                           />
-                          <Text className="member-name">{m.user?.nickname || '未知'}</Text>
+                          <View className="member-info">
+                            <Text className="member-name">{m.user?.nickname || '未知'}</Text>
+                            {m.user?.game_ids && <Text className="member-game-id">ID: {m.user.game_ids}</Text>}
+                          </View>
                           <View className="member-actions">
                             <Button className="mini-btn approve" size="mini" onClick={() => handleReviewMember(m.id, 'approve')}>
                               通过
@@ -395,7 +504,9 @@ export default function TeamManage() {
                         />
                         <View className="member-info">
                           <Text className="member-name">{m.user?.nickname || '未知'}</Text>
-                          <Text className="member-time">{formatDate(m.joined_at)}</Text>
+                          <Text className="member-time">
+                            {m.user?.game_ids ? `ID: ${m.user.game_ids} · ` : ''}{formatDate(m.joined_at)}
+                          </Text>
                         </View>
                         {m.role !== 'captain' && (
                           <Button

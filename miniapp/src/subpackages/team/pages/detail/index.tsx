@@ -177,6 +177,9 @@ export default function TeamDetail() {
                     {member.role === 'captain' && <Text className="role-tag captain-tag">队长</Text>}
                     {member.role === 'member' && <Text className="role-tag">队员</Text>}
                   </View>
+                  {member.user?.game_ids && (
+                    <Text className="member-game-id">游戏ID: {member.user.game_ids}</Text>
+                  )}
                   <Text className="member-join-time">加入: {formatDate(member.joined_at)}</Text>
                 </View>
               </View>
