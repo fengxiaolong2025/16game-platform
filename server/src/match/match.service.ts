@@ -91,6 +91,28 @@ export class MatchService {
     return saved;
   }
 
+  async resetMatch(tournamentId: string, matchId: string, userId: string): Promise<Match> {
+    const tournament = await this.tournamentRepo.findOne({ where: { id: tournamentId } });
+    if (!tournament || tournament.creator_id !== userId) throw new ForbiddenException('无权操作');
+
+    const match = await this.matchRepo.findOne({ where: { id: matchId } });
+    if (!match) throw new NotFoundException('比赛不存在');
+
+    match.score_a = null;
+    match.score_b = null;
+    match.winner_id = null;
+    match.status = 'pending';
+    match.completed_at = null;
+    match.notes = null;
+
+    const saved = await this.matchRepo.save(match);
+
+    // Recalculate rankings after reset
+    await this.recalculateRankings(tournamentId);
+
+    return saved;
+  }
+
   async scheduleMatch(tournamentId: string, matchId: string, userId: string, scheduledAt: Date): Promise<Match> {
     const tournament = await this.tournamentRepo.findOne({ where: { id: tournamentId } });
     if (!tournament || tournament.creator_id !== userId) throw new ForbiddenException('无权操作');
@@ -147,7 +169,6 @@ export class MatchService {
     });
 
     const completedMatches = matches.filter(m => m.status === 'completed');
-    if (completedMatches.length === 0) return;
 
     // Collect all participants from all matches (excluding "待定")
     const participantMap = new Map<string, string>();
@@ -159,6 +180,22 @@ export class MatchService {
         participantMap.set(m.participant_b_id, m.participant_b_name);
       }
     });
+
+    // If no completed matches, reset all rankings to zero
+    if (completedMatches.length === 0) {
+      const zeroRankings = Array.from(participantMap.entries()).map(([id, name]) => ({
+        participantId: id,
+        participantName: name,
+        rank: 0,
+        score: 0, wins: 0, losses: 0, draws: 0,
+        scoreFor: 0, scoreAgainst: 0,
+      }));
+      // Sort by name for consistent ordering
+      zeroRankings.sort((a, b) => a.participantName.localeCompare(b.participantName));
+      zeroRankings.forEach((r, i) => { r.rank = i + 1; });
+      await this.rankingService.saveRankings(tournamentId, zeroRankings);
+      return;
+    }
 
     if (tournament.format === 'round_robin') {
       // Round-robin ranking

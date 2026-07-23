@@ -35,6 +35,12 @@ export class MatchController {
     return this.matchService.updateBestOf(tournamentId, id, req.user.id, body.best_of);
   }
 
+  @Put(':id/reset')
+  @UseGuards(JwtAuthGuard)
+  async resetMatch(@Param('tournamentId') tournamentId: string, @Param('id') id: string, @Request() req) {
+    return this.matchService.resetMatch(tournamentId, id, req.user.id);
+  }
+
   @Put('round/:round/best-of')
   @UseGuards(JwtAuthGuard)
   async updateRoundBestOf(@Param('tournamentId') tournamentId: string, @Param('round') round: string, @Request() req, @Body() body: { best_of: number }) {
