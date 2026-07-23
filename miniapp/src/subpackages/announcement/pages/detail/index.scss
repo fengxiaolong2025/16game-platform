@@ -69,6 +69,18 @@
   word-break: break-all;
 }
 
+.ann-detail-images {
+  margin-top: 24rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.ann-detail-image {
+  width: 100%;
+  border-radius: 12rpx;
+}
+
 .edit-btn {
   width: 100% !important;
   height: 80rpx;

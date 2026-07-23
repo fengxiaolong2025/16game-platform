@@ -1,9 +1,9 @@
-import { View, Text, Input, Textarea, Button, Switch, ScrollView } from '@tarojs/components'
+import { View, Text, Input, Textarea, Button, Switch, ScrollView, Image } from '@tarojs/components'
 import Taro, { useLoad, usePullDownRefresh } from '@tarojs/taro'
 import { useState, useCallback } from 'react'
 import { announcementApi } from '../../../../api'
 import { useAuthStore } from '../../../../store/auth'
-import { formatDate } from '../../../../utils'
+import { formatDate, toAbsUrl } from '../../../../utils'
 import './index.scss'
 
 export default function AnnouncementManage() {
@@ -18,6 +18,7 @@ export default function AnnouncementManage() {
     content: '',
     is_pinned: false,
     status: 'published',
+    images: [] as string[],
   })
 
   const fetchData = useCallback(async () => {
@@ -47,7 +48,7 @@ export default function AnnouncementManage() {
   })
 
   const resetForm = () => {
-    setForm({ title: '', content: '', is_pinned: false, status: 'published' })
+    setForm({ title: '', content: '', is_pinned: false, status: 'published', images: [] })
     setEditingId(null)
   }
 
@@ -57,9 +58,33 @@ export default function AnnouncementManage() {
       content: ann.content || '',
       is_pinned: ann.is_pinned || false,
       status: ann.status || 'published',
+      images: ann.images || [],
     })
     setEditingId(ann.id)
     setShowForm(true)
+  }
+
+  const handleChooseImage = async () => {
+    try {
+      const res = await Taro.chooseImage({ count: 9, sizeType: ['compressed'], sourceType: ['album', 'camera'] })
+      Taro.showLoading({ title: '上传中...' })
+      const result = await announcementApi.uploadImages(res.tempFilePaths)
+      const urls = (result.data as any)?.urls || []
+      setForm((prev) => ({ ...prev, images: [...prev.images, ...urls] }))
+      Taro.hideLoading()
+    } catch (err: any) {
+      Taro.hideLoading()
+      if (err?.errMsg?.includes('cancel')) return
+      Taro.showToast({ title: '上传失败', icon: 'none' })
+    }
+  }
+
+  const handleRemoveImage = (idx: number) => {
+    setForm((prev) => ({ ...prev, images: prev.images.filter((_, i) => i !== idx) }))
+  }
+
+  const handlePreviewImage = (current: string) => {
+    Taro.previewImage({ urls: form.images.map((i) => toAbsUrl(i)), current: toAbsUrl(current) })
   }
 
   const handleSubmit = async () => {
@@ -151,6 +176,29 @@ export default function AnnouncementManage() {
               color="#667eea"
               onChange={(e) => setForm({ ...form, is_pinned: e.detail.value })}
             />
+          </View>
+
+          <View className="form-item">
+            <Text className="form-label">图片</Text>
+            <View className="image-upload-area">
+              {form.images.map((img, idx) => (
+                <View key={idx} className="image-item">
+                  <Image
+                    className="preview-img"
+                    src={toAbsUrl(img)}
+                    mode="aspectFill"
+                    onClick={() => handlePreviewImage(img)}
+                  />
+                  <Text className="remove-img" onClick={() => handleRemoveImage(idx)}>×</Text>
+                </View>
+              ))}
+              {form.images.length < 9 && (
+                <View className="upload-btn" onClick={handleChooseImage}>
+                  <Text className="upload-icon">+</Text>
+                  <Text className="upload-text">添加图片</Text>
+                </View>
+              )}
+            </View>
           </View>
 
           <View className="form-actions">

@@ -1,9 +1,9 @@
-import { View, Text, Button } from '@tarojs/components'
+import { View, Text, Button, Image } from '@tarojs/components'
 import Taro, { useRouter, useLoad } from '@tarojs/taro'
 import { useState } from 'react'
 import { announcementApi } from '../../../../api'
 import { useAuthStore } from '../../../../store/auth'
-import { formatDate } from '../../../../utils'
+import { formatDate, toAbsUrl } from '../../../../utils'
 import './index.scss'
 
 export default function AnnouncementDetail() {
@@ -68,6 +68,24 @@ export default function AnnouncementDetail() {
         <View className="ann-detail-content">
           <Text className="content-text">{ann.content}</Text>
         </View>
+
+        {/* 图片展示 */}
+        {ann.images && ann.images.length > 0 && (
+          <View className="ann-detail-images">
+            {ann.images.map((img: string, idx: number) => (
+              <Image
+                key={idx}
+                className="ann-detail-image"
+                src={toAbsUrl(img)}
+                mode="widthFix"
+                onClick={() => Taro.previewImage({
+                  urls: ann.images.map((i: string) => toAbsUrl(i)),
+                  current: toAbsUrl(img),
+                })}
+              />
+            ))}
+          </View>
+        )}
       </View>
 
       {(user?.role ?? 0) >= 1 && (

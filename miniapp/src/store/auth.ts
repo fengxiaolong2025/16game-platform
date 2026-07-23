@@ -38,7 +38,10 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: (() => {
     try {
-      return Taro.getStorageSync('user') || null
+      const raw = Taro.getStorageSync('user')
+      if (!raw) return null
+      // getStorageSync 可能返回字符串（JSON.stringify后）或对象
+      return typeof raw === 'string' ? JSON.parse(raw) : raw
     } catch {
       return null
     }

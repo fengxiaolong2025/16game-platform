@@ -93,6 +93,8 @@ export const matchApi = {
     http.put(`/tournaments/${tournamentId}/matches/${id}/best-of`, { best_of }),
   updateRoundBestOf: (tournamentId: string, round: number, best_of: number) =>
     http.put(`/tournaments/${tournamentId}/matches/round/${round}/best-of`, { best_of }),
+  resetMatch: (tournamentId: string, id: string) =>
+    http.put(`/tournaments/${tournamentId}/matches/${id}/reset`, {}),
 }
 
 // ==================== 排名 API ====================

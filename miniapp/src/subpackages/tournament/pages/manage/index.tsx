@@ -220,8 +220,7 @@ export default function ManageTournament() {
       success: async (res) => {
         if (!res.confirm) return
         try {
-          await matchApi.submitResult(id, match.id, { score_a: 0, score_b: 0, winner_id: null })
-          await matchApi.updateStatus(id, match.id, 'pending')
+          await matchApi.resetMatch(id, match.id)
           Taro.showToast({ title: '已重置', icon: 'success' })
           fetchData()
         } catch (err: any) {
