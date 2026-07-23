@@ -3,6 +3,7 @@ import { Table, Button, Tag, Space, message, Modal, Input, Popconfirm, Card, Tab
 import { DeleteOutlined, KeyOutlined, ReloadOutlined, PlusOutlined, UploadOutlined, DownloadOutlined } from '@ant-design/icons';
 import MDEditor from '@uiw/react-md-editor';
 import { authApi, announcementApi, honorRollApi, teamApi } from '../api';
+import { useAuthStore } from '../store/auth';
 
 // ========== User Management ==========
 function UserManagement() {
@@ -10,8 +11,13 @@ function UserManagement() {
   const [loading, setLoading] = useState(true);
   const [pwdModal, setPwdModal] = useState<{ open: boolean; userId: string; username: string }>({ open: false, userId: '', username: '' });
   const [newPassword, setNewPassword] = useState('');
+  const { user: currentUser } = useAuthStore();
 
-  useEffect(() => { loadUsers(); }, []);
+  useEffect(() => {
+    // 进入管理页面时刷新当前用户信息，确保 role 是最新的
+    useAuthStore.getState().fetchUser();
+    loadUsers();
+  }, []);
 
   const loadUsers = async () => {
     setLoading(true);
@@ -79,8 +85,7 @@ function UserManagement() {
     }
   };
 
-  // 当前登录用户是否为超级管理员
-  const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
+  // 当前登录用户是否为超级管理员（从 zustand store 响应式获取）
   const isSuperAdmin = currentUser?.role === 1;
 
   const columns = [
