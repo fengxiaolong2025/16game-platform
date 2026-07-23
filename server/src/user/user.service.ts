@@ -9,6 +9,7 @@ import { Tournament } from '../tournament/tournament.entity';
 import { Registration } from '../registration/registration.entity';
 import { Team, TeamMember } from '../team/team.entity';
 import { Notification } from '../notification/notification.entity';
+import { Match } from '../match/match.entity';
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -26,6 +27,8 @@ export class UserService implements OnModuleInit {
     private memberRepo: Repository<TeamMember>,
     @InjectRepository(Notification)
     private notifRepo: Repository<Notification>,
+    @InjectRepository(Match)
+    private matchRepo: Repository<Match>,
   ) {}
 
   async onModuleInit() {
@@ -423,5 +426,48 @@ export class UserService implements OnModuleInit {
       order: { created_at: 'DESC' },
       take: 50,
     });
+  }
+
+  /**
+   * 获取用户参赛统计：参赛场次、胜场、负场
+   * 同时考虑个人赛（participant_id = userId）和战队赛（participant_id = teamId）
+   */
+  async getMatchStats(userId: string): Promise<{ total: number; wins: number; losses: number }> {
+    // 1. 获取用户所属的所有战队ID
+    const teamMembers = await this.memberRepo
+      .createQueryBuilder('tm')
+      .where('tm.user_id = :userId', { userId })
+      .andWhere('tm.status = :status', { status: 'approved' })
+      .select('tm.team_id')
+      .getRawMany();
+    const teamIds = teamMembers.map((m: any) => m.team_id);
+
+    // 2. 构建参赛者ID列表（userId + teamIds）
+    const participantIds = [userId, ...teamIds];
+
+    // 3. 查询所有已完成的比赛，用户（或其战队）参与的比赛
+    const matches = await this.matchRepo
+      .createQueryBuilder('m')
+      .where('m.status = :status', { status: 'completed' })
+      .andWhere(
+        '(m.participant_a_id IN (:...ids) OR m.participant_b_id IN (:...ids))',
+        { ids: participantIds },
+      )
+      .getMany();
+
+    let wins = 0;
+    let losses = 0;
+
+    for (const m of matches) {
+      const isParticipantA = m.participant_a_id && participantIds.includes(m.participant_a_id);
+      const myId = isParticipantA ? m.participant_a_id : m.participant_b_id;
+      if (m.winner_id && m.winner_id === myId) {
+        wins++;
+      } else {
+        losses++;
+      }
+    }
+
+    return { total: matches.length, wins, losses };
   }
 }

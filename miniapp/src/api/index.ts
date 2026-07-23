@@ -19,6 +19,7 @@ export const authApi = {
   registerByUsername: (username: string, password: string, nickname?: string) =>
     http.post('/users/register/username', { username, password, nickname }),
   getMe: () => http.get('/users/me'),
+  getMatchStats: () => http.get('/users/me/match-stats'),
   updateProfile: (data: any) => http.put('/users/me', data),
   getUser: (id: string) => http.get(`/users/${id}`),
   unbindWechat: () => http.post('/users/me/unbindWechat'),

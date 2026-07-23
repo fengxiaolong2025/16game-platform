@@ -124,6 +124,15 @@ export class UserController {
   }
 
   /**
+   * 获取当前用户参赛统计（参赛场次、胜场、负场）
+   */
+  @Get('me/match-stats')
+  @UseGuards(JwtAuthGuard)
+  async getMatchStats(@Request() req) {
+    return this.userService.getMatchStats(req.user.id);
+  }
+
+  /**
    * 用户自助解绑微信
    */
   @Post('me/unbindWechat')

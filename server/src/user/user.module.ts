@@ -13,10 +13,11 @@ import { Registration } from '../registration/registration.entity';
 import { Team } from '../team/team.entity';
 import { TeamMember } from '../team/team.entity';
 import { Notification } from '../notification/notification.entity';
+import { Match } from '../match/match.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Tournament, Registration, Team, TeamMember, Notification]),
+    TypeOrmModule.forFeature([User, Tournament, Registration, Team, TeamMember, Notification, Match]),
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

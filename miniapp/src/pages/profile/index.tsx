@@ -1,5 +1,6 @@
 import { View, Text, Image, Button } from '@tarojs/components'
 import Taro, { useLoad } from '@tarojs/taro'
+import { useState } from 'react'
 import { useAuthStore } from '../../store/auth'
 import { authApi } from '../../api'
 import { toAbsUrl } from '../../utils'
@@ -10,6 +11,7 @@ export default function Profile() {
   const token = useAuthStore((s) => s.token)
   const logout = useAuthStore((s) => s.logout)
   const fetchUser = useAuthStore((s) => s.fetchUser)
+  const [matchStats, setMatchStats] = useState({ total: 0, wins: 0, losses: 0 })
 
   const handleLogout = () => {
     Taro.showModal({
@@ -46,6 +48,9 @@ export default function Profile() {
   useLoad(() => {
     if (token) {
       fetchUser()
+      authApi.getMatchStats().then((res) => {
+        setMatchStats(res.data as any)
+      }).catch(() => {})
     }
   })
 
@@ -143,6 +148,24 @@ export default function Profile() {
         <View className="stat-item">
           <Text className="stat-value">{user?.position || '-'}</Text>
           <Text className="stat-label">位置</Text>
+        </View>
+      </View>
+
+      {/* 参赛统计 */}
+      <View className="profile-stats match-stats">
+        <View className="stat-item">
+          <Text className="stat-value stat-value-blue">{matchStats.total}</Text>
+          <Text className="stat-label">参赛</Text>
+        </View>
+        <View className="stat-divider" />
+        <View className="stat-item">
+          <Text className="stat-value stat-value-green">{matchStats.wins}</Text>
+          <Text className="stat-label">胜</Text>
+        </View>
+        <View className="stat-divider" />
+        <View className="stat-item">
+          <Text className="stat-value stat-value-red">{matchStats.losses}</Text>
+          <Text className="stat-label">负</Text>
         </View>
       </View>
 
